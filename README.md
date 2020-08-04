@@ -13,7 +13,7 @@ Overall the bot performs reasonably well. It can usually beat new or weak oppone
 
 ### Web interface usage
 To run from the web interface (preferred) run python flask_server.py Then in your preferred web browser open up uttt.html. From there it should be very intuitive. you can select how many seconds to allow for each computer move and after each move some metadata (how many states considered, which moves it considered along with their scores etc.) will be displayed. It should look like this:
-<img src="/docs/uttt_game_Example.png" alt="UTTT game example"/>
+<img src="/docs/uttt_game_example.png" alt="UTTT game example"/>
 
 ### Command line usage
 To run this program from the command line simply run python runner.py, and the game will start. Edit the runner file to change how many seconds the computer gets to think on each move. Specifically edit the run_game method.
