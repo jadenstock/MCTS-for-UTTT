@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="uttt.css" />
+</head>
+
+<body>
+    <div class="container">
+        <h1>Ultimate-Tic-Tac-Toe</h1>
+        <h3 id="thinking-message"></h3>
+        <div class="mid-container">
+            <div class="moves-list">
+                <h3><u>Previous Moves</u></h3>
+                <select id="past-moves", size=20>
+                </select>
+            </div>
+            <div class="game-board"></div>
+            <div class="agent-metadata">
+
+                <div class="compute-time-slider">
+                  <h4><u>Computer Think Time</u></h4>
+                  <input type="range" min="5" max="60" value="20" class="slider" id="computeTime", onchange="updateSlider(this.value)">
+                  <p id="compute-time-value", data-value=20></p>
+                </div>
+
+                <div class="agent-move-metadata">
+                    <h4><u>Computer Move Metadata</u></h4>
+                    <p id="metadata-nodes-evaluated"><u>Gamestates Evaluated:</u> ...</p>
+                    <p id="metadata-depth-evaluated"><u>Gametree Depth:</u> ...</p>
+                    <p id="metadata-predicted-line"><u>Predicted Line:</u> ...</p>
+                    <p id="metadata-moves"><u>Moves Considered:</u> ...</p>
+                </div>
+
+            </div>
+        </div>
+        <h2 id="last-move", data-lastBoard=0, data-lastCell=-1><h2>
+        <h2 id="winner", data-winner=""></h2>
+        <button onclick="reset_board()">RESET</button>
+    </div>
+    <script src="uttt.js"></script>
+</body>
+
+</html>
