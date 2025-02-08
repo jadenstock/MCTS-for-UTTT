@@ -13,6 +13,7 @@ let play_board = [
 ["", "", "", "", "", "", "", "", ""],
 ["", "", "", "", "", "", "", "", ""]];
 let move_number = 1;
+let isComputerThinking = false;
 
 const board_container = document.querySelector(".game-board");
 const winner = document.getElementById("winner");
@@ -128,6 +129,11 @@ const add_to_past_moves = (i, j, p) => {
 }
 
 const addPlayerMove = (i,j) => {
+  // Add check for computer's turn
+  if (isComputerThinking) {
+    return; // Exit if it's computer's turn
+  }
+
   if (!document.querySelector(`#cell_${i}${j}`).classList.contains("occupied")) {
     play_board[i][j] = player;
     add_to_past_moves(i, j, player);
@@ -147,6 +153,7 @@ const addComputerMove = async() => {
   findLegalMoves();
   
   if (winner.dataset.winner == "") {
+    isComputerThinking = true;
     let message = document.getElementById("thinking-message");
     message.innerHTML = "Computer Thinking..."
 
@@ -202,7 +209,7 @@ const addComputerMove = async() => {
       last_move.dataset.lastCell = c;
 
       message.innerHTML = ""
-      
+      isComputerThinking = true;
       game_loop();
     })
   }

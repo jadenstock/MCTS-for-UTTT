@@ -79,15 +79,8 @@
 ## Known Bugs
 
 ### Critical
-- Move placement during computer turn
-  - Players can currently make moves during AI turn
-  - Causes game state corruption
-  - Priority: High
 
 ### Performance
-- Document any performance-related issues
-- Track and monitor system resource usage
-- Identify bottlenecks in computation
 
 ## Infrastructure & Data
 
