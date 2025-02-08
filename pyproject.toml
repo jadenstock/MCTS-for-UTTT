@@ -1,0 +1,10 @@
+[project]
+name = "ultimate-tic-tac-toe-ai"
+version = "0.1.0"
+description = "An AI agent for Ultimate Tic Tac Toe using Monte Carlo Tree Search (MCTS)"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "flask-cors>=5.0.0",
+    "flask>=3.1.0",
+    "invoke>=2.2.0",
+]
