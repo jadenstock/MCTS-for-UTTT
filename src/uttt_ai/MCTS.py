@@ -4,9 +4,9 @@ import time
 import math
 import gc
 
+from config import *
 from utils import *
 from Game import *
-
 
 class SimulationTreeNode:
     def __init__(self, game, player):
@@ -17,7 +17,6 @@ class SimulationTreeNode:
         self.total_score = 0
         self.depth_seen = 1
         self.unseen_children = list(game.legal_moves())
-        # New tracking variables for adaptive thinking
         self.best_move_stable_count = 0
         self.last_best_move = None
 
@@ -46,17 +45,14 @@ class SimulationTreeNode:
             avg_score = c.total_score / float(c.number_of_plays)
             moves_with_scores.append((m, avg_score))
 
-        # Sort by score
         moves_with_scores.sort(key=lambda x: x[1], reverse=True)
         best_move = moves_with_scores[0][0]
 
-        # Calculate confidence based on score differential
         confidence = 1.0
         if len(moves_with_scores) > 1:
             score_diff = moves_with_scores[0][1] - moves_with_scores[1][1]
-            confidence = min(1.0, score_diff / 0.5)  # Normalize difference
+            confidence = min(1.0, score_diff / SCORE_DIFF_NORMALIZER)
 
-        # Track move stability
         if best_move == self.last_best_move:
             self.best_move_stable_count += 1
         else:
@@ -74,18 +70,18 @@ class SimulationTreeNode:
             child = child.children[m]
         return line
 
-    def get_best_action_by_ucb1(self, C=1):
+    def get_best_action_by_ucb1(self, C=DEFAULT_UCB_CONSTANT):
         action = None
         best_score = -float("inf")
         for m, c in self.children.items():
             ucb = (c.total_score / float(c.number_of_plays)) + (
-                        2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays)))
+                2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays)))
             if ucb >= best_score:
                 best_score = ucb
                 action = m
         return action
 
-    def expand_one_child(self, game_path=[], opp_strat="greedy", comp_dist=[.5, .1, .05]):
+    def expand_one_child(self, game_path=[], opp_strat="greedy", comp_dist=COMP_DIST_MEDIUM_MOVES):
         if len(self.unseen_children) == 0:
             print("no more unseen states from this node!")
             return
@@ -101,8 +97,9 @@ class SimulationTreeNode:
                 s = comp_dist[1]
             else:
                 s = comp_dist[2]
-            n = evaluate_next_move(child_game, seconds_limit=s, node_limit=75, C=1, verbose=False)
-            if n != None:
+            n = evaluate_next_move(child_game, seconds_limit=s, node_limit=DEFAULT_OPPONENT_NODE_LIMIT,
+                                 C=DEFAULT_UCB_CONSTANT, verbose=False)
+            if n is not None:
                 child_game.make_move(n[0], n[1], child_game.next_to_move)
             gc.collect()
         else:
@@ -118,7 +115,8 @@ class SimulationTreeNode:
             if len(game_path) > node.depth_seen:
                 node.depth_seen = len(game_path)
 
-    def expand_tree_by_one(self, game_path=[], C=1, opp_strat="greedy", comp_dist=[.5, .1, .05]):
+    def expand_tree_by_one(self, game_path=[], C=DEFAULT_UCB_CONSTANT, opp_strat="greedy",
+                          comp_dist=COMP_DIST_MEDIUM_MOVES):
         if len(self.unseen_children) != 0:
             self.expand_one_child(game_path=game_path, opp_strat=opp_strat, comp_dist=comp_dist)
         else:
@@ -126,9 +124,8 @@ class SimulationTreeNode:
                 m = self.get_best_action_by_ucb1(C=C)
                 self.children[m].expand_tree_by_one(game_path=game_path + [self], opp_strat=opp_strat)
 
-
-def evaluate_next_move(game, seconds_limit=15, node_limit=float("inf"), C=1, opp_strat="greedy", verbose=True,
-                       metadata=True):
+def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEFAULT_NODE_LIMIT,
+                      C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", verbose=True, metadata=True):
     if (game.last_move == None) or (game.last_move[2] == "o"):
         next_to_move = "x"
     elif (game.last_move[2] == "x"):
@@ -139,46 +136,38 @@ def evaluate_next_move(game, seconds_limit=15, node_limit=float("inf"), C=1, opp
     node = SimulationTreeNode(game, game.next_to_move)
 
     # Set opponent strategy computation distribution
-    comp_dist = []
     l = len(node.game.legal_moves())
-    if seconds_limit <= 5:
+    if seconds_limit <= GREEDY_TIME_THRESHOLD:
         opp_strat = "greedy"
-    elif (seconds_limit > 5) and (seconds_limit <= 10):
-        if l >= 9:
-            comp_dist = [.1, .05, .05]
+        comp_dist = COMP_DIST_MEDIUM_MOVES
+    elif seconds_limit <= MEDIUM_TIME_THRESHOLD:
+        if l >= COMPLEX_POSITION_THRESHOLD:
+            comp_dist = COMP_DIST_MANY_MOVES
         else:
-            comp_dist = [.5, .1, .05]
+            comp_dist = COMP_DIST_MEDIUM_MOVES
     else:
-        if l >= 9:
-            comp_dist = [.1, .1, .05]
-        elif l > 5:
-            comp_dist = [.5, .1, .05]
+        if l >= COMPLEX_POSITION_THRESHOLD:
+            comp_dist = COMP_DIST_MANY_MOVES
+        elif l > MEDIUM_POSITION_THRESHOLD:
+            comp_dist = COMP_DIST_MEDIUM_MOVES
         else:
-            comp_dist = [1, .5, .1]
+            comp_dist = COMP_DIST_FEW_MOVES
 
-    # Set minimum exploration time based on position complexity
-    min_time = min(3, seconds_limit * 0.2)  # At least 20% of max time or 3 seconds
-
+    min_time = min(3, seconds_limit * MIN_TIME_RATIO)
     t = time.time()
     last_check_time = t
-    check_interval = 0.5  # Check confidence every 0.5 seconds
 
     while (time.time() - t <= seconds_limit) and (node.number_of_plays < node_limit):
         node.expand_tree_by_one(C=C, opp_strat=opp_strat, comp_dist=comp_dist)
 
-        # Check for early stopping every check_interval seconds
         current_time = time.time()
-        if current_time - last_check_time >= check_interval:
-            if current_time - t >= min_time:  # Only check after minimum time
+        if current_time - last_check_time >= CHECK_INTERVAL:
+            if current_time - t >= min_time:
                 best_move, confidence = node.get_best_action_and_confidence()
 
-                # Early stopping conditions:
-                # 1. High confidence (>0.8) and stable best move for 3+ checks
-                # 2. Moderate confidence (>0.6) and stable best move for 5+ checks
-                # 3. Any confidence and stable best move for 8+ checks
-                if ((confidence > 0.8 and node.best_move_stable_count >= 3) or
-                        (confidence > 0.6 and node.best_move_stable_count >= 5) or
-                        node.best_move_stable_count >= 8):
+                if ((confidence > CONFIDENCE_HIGH and node.best_move_stable_count >= STABLE_CHECKS_HIGH) or
+                    (confidence > CONFIDENCE_MODERATE and node.best_move_stable_count >= STABLE_CHECKS_MODERATE) or
+                    node.best_move_stable_count >= STABLE_CHECKS_LOW):
                     break
 
             last_check_time = current_time
@@ -190,10 +179,10 @@ def evaluate_next_move(game, seconds_limit=15, node_limit=float("inf"), C=1, opp
             "num_gamestates": node.number_of_plays,
             "depth_explored": node.depth_seen,
             "moves": sorted([(m, node.get_score_of_move(m)) for m in node.children],
-                            key=lambda x: x[1])[::-1],
+                          key=lambda x: x[1])[::-1],
             "predicted_line": node.best_predicted_line(),
-            "thinking_time": time.time() - t,  # Add actual thinking time to metadata
-            "early_stop": time.time() - t < seconds_limit  # Flag if we stopped early
+            "thinking_time": time.time() - t,
+            "early_stop": time.time() - t < seconds_limit
         }
 
         if verbose:
