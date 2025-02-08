@@ -129,9 +129,9 @@ const add_to_past_moves = (i, j, p) => {
 }
 
 const addPlayerMove = (i,j) => {
-  // Add check for computer's turn
   if (isComputerThinking) {
-    return; // Exit if it's computer's turn
+    console.log("Move blocked - computer thinking");
+    return;
   }
 
   if (!document.querySelector(`#cell_${i}${j}`).classList.contains("occupied")) {
@@ -209,7 +209,7 @@ const addComputerMove = async() => {
       last_move.dataset.lastCell = c;
 
       message.innerHTML = ""
-      isComputerThinking = true;
+      isComputerThinking = false;
       game_loop();
     })
   }
