@@ -26,6 +26,12 @@
                   <h4>Computer Think Time</h4>
                   <input type="range" min="5" max="60" value="20" class="computeTime" id="computeTime" onchange="updateSlider(this.value)">
                   <p id="compute-time-value"></p>
+
+                  <div class="force-time-option">
+                    <input type="checkbox" id="forceFullTime">
+                    <label for="forceFullTime">Force full thinking time</label>
+                  </div>
+                  <p id="actual-think-time">Actual thinking time: ...</p>
                 </div>
 
                 <div class="agent-move-metadata">

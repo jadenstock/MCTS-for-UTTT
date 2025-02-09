@@ -125,7 +125,7 @@ class SimulationTreeNode:
                 self.children[m].expand_tree_by_one(game_path=game_path + [self], opp_strat=opp_strat)
 
 def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEFAULT_NODE_LIMIT,
-                      C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", verbose=True, metadata=True):
+                      C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", force_full_time=False, verbose=True, metadata=True):
     if (game.last_move == None) or (game.last_move[2] == "o"):
         next_to_move = "x"
     elif (game.last_move[2] == "x"):
@@ -160,17 +160,18 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
     while (time.time() - t <= seconds_limit) and (node.number_of_plays < node_limit):
         node.expand_tree_by_one(C=C, opp_strat=opp_strat, comp_dist=comp_dist)
 
-        current_time = time.time()
-        if current_time - last_check_time >= CHECK_INTERVAL:
-            if current_time - t >= min_time:
-                best_move, confidence = node.get_best_action_and_confidence()
+        if not force_full_time:
+            current_time = time.time()
+            if current_time - last_check_time >= CHECK_INTERVAL:
+                if current_time - t >= min_time:
+                    best_move, confidence = node.get_best_action_and_confidence()
 
-                if ((confidence > CONFIDENCE_HIGH and node.best_move_stable_count >= STABLE_CHECKS_HIGH) or
-                    (confidence > CONFIDENCE_MODERATE and node.best_move_stable_count >= STABLE_CHECKS_MODERATE) or
-                    node.best_move_stable_count >= STABLE_CHECKS_LOW):
-                    break
+                    if ((confidence > CONFIDENCE_HIGH and node.best_move_stable_count >= STABLE_CHECKS_HIGH) or
+                        (confidence > CONFIDENCE_MODERATE and node.best_move_stable_count >= STABLE_CHECKS_MODERATE) or
+                        node.best_move_stable_count >= STABLE_CHECKS_LOW):
+                        break
 
-            last_check_time = current_time
+                last_check_time = current_time
 
     best_move = node.get_best_action_by_average_score()
 
@@ -182,7 +183,7 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
                           key=lambda x: x[1])[::-1],
             "predicted_line": node.best_predicted_line(),
             "thinking_time": time.time() - t,
-            "early_stop": time.time() - t < seconds_limit
+            "early_stop": not force_full_time and time.time() - t < seconds_limit
         }
 
         if verbose:

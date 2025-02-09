@@ -159,7 +159,13 @@ const addComputerMove = async() => {
 
     let last_move_arr = [last_move.dataset.lastBoard, last_move.dataset.lastCell, player];
     let big_board = [play_board[0], play_board[1], play_board[2], play_board[3], play_board[4], play_board[5], play_board[6], play_board[7], play_board[8]];
-    let request_data = JSON.stringify({"last_move": last_move_arr, "game_board": big_board, "compute_time": document.getElementById("computeTime").value});
+    let forceFullTime = document.getElementById("forceFullTime").checked;
+    let request_data = JSON.stringify({
+      "last_move": last_move_arr,
+      "game_board": big_board,
+      "compute_time": document.getElementById("computeTime").value,
+      "force_full_time": forceFullTime
+    });
 
     fetch('http://127.0.0.1:5000/api/makemove/', {
       method: "POST",
@@ -172,6 +178,10 @@ const addComputerMove = async() => {
       credentials: "same-origin"
     }).then((response) => response.json())
     .then(function(response) {
+      // Update actual think time display
+      document.getElementById("actual-think-time").innerHTML =
+        `Actual thinking time: ${response.metadata.thinking_time.toFixed(2)} seconds`;
+
       let b = parseInt(response.board)
       let c = parseInt(response.cell)
       add_to_past_moves(b, c, computer);
