@@ -23,7 +23,7 @@ const moves_element = document.getElementById("metadata-moves");
 const predicted_moves_element = document.getElementById("metadata-predicted-line");
 const past_moves = document.getElementById("past-moves");
 
-// check if board if full. whjy is this needed?
+// check if board if full. why is this needed?
 check_board_complete = () => {
   let flag = true;
   play_board.forEach(element => {
