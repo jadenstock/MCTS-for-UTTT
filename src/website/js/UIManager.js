@@ -10,7 +10,6 @@ class UIManager {
         this.lastMoveElement = document.getElementById("last-move");
         this.computeTimeValue = document.getElementById("compute-time-value");
         this.movesElement = document.getElementById("metadata-moves");
-        this.predictedMovesElement = document.getElementById("metadata-predicted-line");
         this.pastMovesElement = document.getElementById("past-moves");
         this.thinkingMessage = document.getElementById("thinking-message");
     }
@@ -129,27 +128,8 @@ class UIManager {
         document.getElementById("actual-think-time").innerHTML =
             `Actual thinking time: ${metadata.thinking_time.toFixed(2)} seconds`;
 
-        // Update predicted line
-        this.updatePredictedLine(metadata.predicted_line);
-
         // Update moves considered
         this.updateMovesConsidered(metadata.moves);
-    }
-
-    updatePredictedLine(predictedLine) {
-        this.predictedMovesElement.innerHTML = '<u>Predicted Line:</u><br>';
-        predictedLine.forEach((move, i) => {
-            if (i > 0) {
-                this.predictedMovesElement.innerHTML +=
-                    `${parseInt(move[0]) + 1}${i < predictedLine.length - 1 ? ", " : ""}<br>`;
-            }
-            this.predictedMovesElement.innerHTML +=
-                `${move[2].toUpperCase()}-B${parseInt(move[0]) + 1}C${parseInt(move[1]) + 1}, `;
-            if (i < predictedLine.length - 1) {
-                this.predictedMovesElement.innerHTML +=
-                    `${GAME_CONSTANTS.PLAYERS.HUMAN}-B${parseInt(move[1]) + 1}C`;
-            }
-        });
     }
 
     updateMovesConsidered(moves) {
@@ -196,8 +176,6 @@ class UIManager {
             "<u>Gamestates Evaluated:</u> ...";
         document.getElementById("metadata-depth-evaluated").innerHTML =
             "<u>Gametree Depth:</u> ...";
-        document.getElementById("metadata-predicted-line").innerHTML =
-            "<u>Predicted Line:</u> ...";
         document.getElementById("metadata-moves").innerHTML =
             "<u>Moves Considered:</u> ...";
     }

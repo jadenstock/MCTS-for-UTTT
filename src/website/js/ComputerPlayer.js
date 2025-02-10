@@ -47,6 +47,7 @@ class ComputerPlayer {
 
     async requestMove() {
         const requestData = {
+            game_id: this.gameState.gameId,
             last_move: [
                 parseInt(document.getElementById("last-move").dataset.lastBoard),
                 parseInt(document.getElementById("last-move").dataset.lastCell),
