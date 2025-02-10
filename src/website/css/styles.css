@@ -229,3 +229,23 @@ button:active {
     max-width: 350px;
   }
 }
+
+.mini-board {
+    position: relative; /* Add this to enable absolute positioning of overlay */
+}
+
+.board-winner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: bold;
+    color: rgba(45, 55, 72, 0.8);
+    pointer-events: none;
+    z-index: 1;
+}

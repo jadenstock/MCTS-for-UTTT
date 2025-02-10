@@ -28,13 +28,19 @@ class UIManager {
     }
 
     renderMiniBoard(miniBoard, boardIndex) {
-        return miniBoard.map((cell, cellIndex) => `
+        const winner = this.gameState.checkBoardWinner(miniBoard);
+        const cells = miniBoard.map((cell, cellIndex) => `
             <div id="cell_${boardIndex}${cellIndex}"
                  class="cell"
                  onclick="game.handleCellClick(${boardIndex}, ${cellIndex})">
                 ${cell}
             </div>`
         ).join('');
+
+        return `
+            ${cells}
+            ${winner ? `<div class="board-winner-overlay">${winner}</div>` : ''}
+        `;
     }
 
     updateLegalMoves() {
