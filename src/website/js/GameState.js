@@ -1,5 +1,6 @@
 class GameState {
     constructor() {
+        this.gameId = crypto.randomUUID();  // Add just this one line
         this.board = [
             ["", "", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", "", ""],

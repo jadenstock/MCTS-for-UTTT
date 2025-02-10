@@ -179,7 +179,6 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
             "depth_explored": node.depth_seen,
             "moves": sorted([(m, node.get_score_of_move(m)) for m in node.children],
                           key=lambda x: x[1])[::-1],
-            "predicted_line": node.best_predicted_line(),
             "thinking_time": time.time() - t,
             "early_stop": not force_full_time and time.time() - t < seconds_limit
         }
@@ -190,7 +189,6 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
             print("best move for {}: {}".format(game.next_to_move, best_move))
             print("score of best move: {}".format(
                 node.children[best_move].total_score / float(node.children[best_move].number_of_plays)))
-            print("predicted line: {}".format(move_metadata["predicted_line"]))
             print("top moves:\n")
             for m, s in move_metadata["moves"]:
                 print("\tmove: {}\tnum_plays: {}\tscore: {}".format(m, node.children[m].number_of_plays, s))
