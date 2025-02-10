@@ -1,5 +1,7 @@
 *.pyc
 
+data/
+
 # Python virtual environments
 .venv/
 venv/
