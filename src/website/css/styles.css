@@ -249,3 +249,18 @@ button:active {
     pointer-events: none;
     z-index: 1;
 }
+
+.button-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.game-select {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    min-width: 200px;
+}

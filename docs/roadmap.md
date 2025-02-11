@@ -76,13 +76,19 @@
   - Customizable UI themes
   - Sound effects and animations
 
+- add invoke option for running on different port. 
+
 ## Known Bugs
 
 ### Critical
 
 ### Performance
 
+- I am not sure that the AI is fully searching towards the end game. Maybe when victories and loses are in sight something breaks. 
+
 ## Infrastructure & Data
+
+- Game seems to break if you reach a drawn game ending with all boards filled
 
 ### Game Logging
 - Implement comprehensive game logging system

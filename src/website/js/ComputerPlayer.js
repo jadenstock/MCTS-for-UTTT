@@ -21,9 +21,6 @@ class ComputerPlayer {
             // Update game state
             this.gameState.board[board][cell] = GAME_CONSTANTS.PLAYERS.COMPUTER;
 
-            // Update UI and last move tracking
-            this.uiManager.addToPastMoves(board, cell, GAME_CONSTANTS.PLAYERS.COMPUTER);
-
             // Critical: Update last move element's dataset
             const lastMoveElement = document.getElementById("last-move");
             lastMoveElement.innerHTML = `Last move: B${board+1}C${cell+1}`;
@@ -58,7 +55,7 @@ class ComputerPlayer {
             force_full_time: document.getElementById("forceFullTime").checked
         };
 
-        return fetch(GAME_CONSTANTS.API_ENDPOINT, {
+        return fetch(GAME_CONSTANTS.API_ENDPOINTS.MAKE_MOVE, {
             method: "POST",
             mode: 'cors',
             body: JSON.stringify(JSON.stringify(requestData)),

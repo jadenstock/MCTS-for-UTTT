@@ -2,16 +2,88 @@ class UIManager {
     constructor(gameState) {
         this.gameState = gameState;
         this.initializeElements();
+
+        // Add debug log
+        console.log("UIManager constructor complete");
+
+        // Wait for DOM to be ready before initializing dropdown
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log("DOMContentLoaded event fired");
+                this.updateSavedGamesDropdown();
+            });
+        } else {
+            // DOM is already ready
+            console.log("DOM already loaded, updating dropdown immediately");
+            this.updateSavedGamesDropdown();
+        }
     }
 
     initializeElements() {
+        console.log("Initializing UI elements");
         this.boardContainer = document.querySelector(".game-board");
         this.winnerElement = document.getElementById("winner");
         this.lastMoveElement = document.getElementById("last-move");
         this.computeTimeValue = document.getElementById("compute-time-value");
         this.movesElement = document.getElementById("metadata-moves");
-        this.pastMovesElement = document.getElementById("past-moves");
         this.thinkingMessage = document.getElementById("thinking-message");
+        this.savedGamesSelect = document.getElementById("saved-games");
+        console.log("Saved games select element:", this.savedGamesSelect);
+    }
+
+    async updateSavedGamesDropdown() {
+        console.log("Attempting to update saved games dropdown");
+        try {
+            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.LIST_GAMES);
+            console.log("API response received:", response);
+            const games = await response.json();
+            console.log("Games data:", games);
+
+            if (!this.savedGamesSelect) {
+                console.error("savedGamesSelect element not found!");
+                return;
+            }
+
+            // Clear existing options except the first placeholder
+            this.savedGamesSelect.innerHTML = '<option value="">Select a game...</option>';
+
+            // Add an option for each saved game
+            games.forEach(game => {
+                const option = document.createElement('option');
+                option.value = game.game_id;
+                option.textContent = `Game ${game.game_id.slice(0, 8)}...`;
+                this.savedGamesSelect.appendChild(option);
+            });
+
+            console.log("Dropdown updated successfully");
+        } catch (error) {
+            console.error('Failed to load games list:', error);
+        }
+    }
+
+    async loadGame(gameId) {
+        try {
+            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.LOAD_GAME(gameId));
+            const gameData = await response.json();
+
+            // Update the game state
+            this.gameState.board = gameData.current_state.board;
+            this.gameState.gameId = gameData.game_id;
+            this.gameState.moveNumber = gameData.moves.length + 1;
+
+            // Update last move tracking
+            const lastMove = gameData.current_state.last_move;
+            this.lastMoveElement.dataset.lastBoard = lastMove[0];
+            this.lastMoveElement.dataset.lastCell = lastMove[1];
+            this.lastMoveElement.innerHTML = `Last move: B${lastMove[0] + 1}C${lastMove[1] + 1}`;
+
+            // Update the UI
+            this.renderBoard();
+            this.updateGameStatus();
+
+        } catch (error) {
+            console.error('Failed to load game:', error);
+        }
     }
 
     renderBoard() {
@@ -108,27 +180,13 @@ class UIManager {
         this.computeTimeValue.innerHTML = `${time} seconds`;
     }
 
-    addToPastMoves(board, cell, player) {
-        this.pastMovesElement.innerHTML += `
-            <option value="" data-move-number=${this.gameState.moveNumber}>
-                ${this.gameState.moveNumber}) ${player}-B${board + 1}C${cell + 1}
-            </option>`;
-    }
-
     updateMetadata(metadata) {
-        // Update nodes evaluated
         document.getElementById("metadata-nodes-evaluated").innerHTML =
             `<u>Gamestates Evaluated:</u> ${metadata.num_gamestates}`;
-
-        // Update depth explored
         document.getElementById("metadata-depth-evaluated").innerHTML =
             `<u>Gametree Depth:</u> ${metadata.depth_explored}`;
-
-        // Update actual think time
         document.getElementById("actual-think-time").innerHTML =
             `Actual thinking time: ${metadata.thinking_time.toFixed(2)} seconds`;
-
-        // Update moves considered
         this.updateMovesConsidered(metadata.moves);
     }
 
@@ -169,7 +227,6 @@ class UIManager {
         this.lastMoveElement.innerHTML = "";
         this.lastMoveElement.dataset.lastBoard = -1;
         this.lastMoveElement.dataset.lastCell = -1;
-        this.pastMovesElement.innerHTML = "";
 
         // Reset metadata displays
         document.getElementById("metadata-nodes-evaluated").innerHTML =
@@ -178,5 +235,8 @@ class UIManager {
             "<u>Gametree Depth:</u> ...";
         document.getElementById("metadata-moves").innerHTML =
             "<u>Moves Considered:</u> ...";
+
+        // Update the games dropdown
+        this.updateSavedGamesDropdown();
     }
 }

@@ -27,7 +27,6 @@ class Game {
         this.gameState.moveNumber++;
 
         // Update UI after human move
-        this.uiManager.addToPastMoves(board, cell, GAME_CONSTANTS.PLAYERS.HUMAN);
         this.uiManager.updateLastMove(board, cell);
         this.uiManager.renderBoard();
         this.uiManager.updateGameStatus();
@@ -38,6 +37,15 @@ class Game {
             this.gameState.checkBoardStatus();
             this.uiManager.renderBoard();
             this.uiManager.updateGameStatus();
+        }
+    }
+
+    loadSelectedGame() {
+        console.log("Load game called");
+        const selectedId = this.uiManager.savedGamesSelect.value;
+        console.log("Selected game:", selectedId);
+        if (selectedId) {
+            this.uiManager.loadGame(selectedId);
         }
     }
 
