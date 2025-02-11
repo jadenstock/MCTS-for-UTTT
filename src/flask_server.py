@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import flask_cors
 import json
+import argparse
 
 from core.game import make_game
 from ai.mcts import evaluate_next_move
@@ -8,6 +9,7 @@ from utils.game_storage import GameStorage
 
 app = Flask(__name__)
 storage = GameStorage()
+
 
 @app.route('/api/makemove/', methods=['POST', 'OPTIONS'])
 @flask_cors.cross_origin()
@@ -29,7 +31,7 @@ def make_move():
     # Get computer's move
     force_full_time = bool(data.get("force_full_time", False))
     m = evaluate_next_move(g, seconds_limit=int(data["compute_time"]),
-                          force_full_time=force_full_time, verbose=False)
+                           force_full_time=force_full_time, verbose=False)
 
     # Apply computer's move and record it as the last move
     g.make_move(m[0], m[1], g.next_to_move)
@@ -62,4 +64,8 @@ def get_game(game_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    parser = argparse.ArgumentParser(description='Run the UTTT Flask server')
+    parser.add_argument('--port', type=int, default=5000, help='Port to run the server on')
+    args = parser.parse_args()
+
+    app.run(debug=True, port=args.port)

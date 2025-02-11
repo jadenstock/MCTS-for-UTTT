@@ -1,117 +1,179 @@
 # Ultimate Tic-Tac-Toe Frontend Documentation
 
+## Project Overview
+
+Ultimate Tic-Tac-Toe is a complex variant of the classic game, implemented with a web frontend and Flask backend. The frontend is built with vanilla JavaScript using a component-based architecture.
+
 ## Project Structure
+
 ```
 /ultimate-tictactoe
-  ├── index.html                    # Main HTML file
-  └── css/
-      ├── styles.css                # Styles
+  ├── index.html           # Main HTML file with game interface
+  ├── css/
+  │   └── styles.css      # Game styling
   └── js/
-      ├── constants.js              # Game constants and configuration
-      ├── GameState.js              # Core game state management
-      ├── UIManager.js              # DOM manipulation and rendering
-      ├── ComputerPlayer.js         # AI move computation and API interaction
-      └── Game.js                   # Main game coordination
+      ├── constants.js    # Game constants and API endpoints
+      ├── GameState.js    # Core game logic and state management
+      ├── UIManager.js    # DOM manipulation and UI updates
+      ├── ComputerPlayer.js # AI interaction and move computation
+      └── Game.js        # Main game coordination
 ```
 
-## Key Components
+## Core Components
 
 ### GameState Class
-Manages the core game state including:
-- 9x9 board representation
-- Move tracking
-- Winner detection
-- Game status (computer thinking, game over, etc.)
+
+Manages the core game logic and state:
 
 ```javascript
-this.board = [["", "", "", ...], ...];  // 9x9 array of moves
-this.moveNumber = 1;
-this.isComputerThinking = false;
-this.winner = null;
-this.boardFull = false;
+{
+    gameId: string,          // Unique UUID for game persistence
+    board: Array[9][9],      // 9x9 array representing the complete game board
+    moveNumber: number,      // Current move number
+    isComputerThinking: boolean,
+    winner: string|null,     // Current winner (if any)
+    boardFull: boolean,      // Whether the board is full
+    targetBoard: number      // Which board must be played in (-1 for any)
+}
 ```
+
+Key Methods:
+- `makeMove(board, cell, player)`: Validates and executes moves
+- `checkBoardWinner(board)`: Determines if a mini-board is won
+- `checkGameWinner()`: Checks for game completion
+- `checkBoardStatus()`: Updates game state after moves
+- `reset()`: Resets game to initial state
 
 ### UIManager Class
-Handles all DOM interactions and rendering:
-- Board rendering
-- Move highlighting
-- Legal move validation
-- Metadata updates (nodes evaluated, depth, etc.)
-- Past moves tracking
 
-Key method: `updateLegalMoves()`
-- Clears all cell states
-- Highlights last move in red
-- Marks occupied cells
-- Implements UTTT rules about which board can be played in
+Handles all DOM interactions and rendering:
+
+```javascript
+{
+    gameState: GameState,    // Reference to game state
+    boardContainer: Element, // Main game board container
+    winnerElement: Element,  // Winner display element
+    lastMoveElement: Element, // Last move tracking
+    savedGamesSelect: Element // Game loading dropdown
+}
+```
+
+Key Methods:
+- `renderBoard()`: Renders complete game board
+- `updateLegalMoves()`: Highlights legal moves and last move
+- `updateGameStatus()`: Updates winner display
+- `loadGame(gameId)`: Loads saved game state
+- `updateSavedGamesDropdown()`: Updates game selection dropdown
 
 ### ComputerPlayer Class
-Manages AI interaction:
-- Makes API calls to Flask backend
-- Processes AI responses
-- Updates game state with computer moves
-- Handles metadata display
 
-Important detail: Uses double JSON.stringify for API calls:
+Manages AI interaction:
+
 ```javascript
-body: JSON.stringify(JSON.stringify(requestData))
+{
+    gameState: GameState,
+    uiManager: UIManager
+}
 ```
-This is required for compatibility with the Flask backend.
+
+Key Methods:
+- `makeMove()`: Coordinates computer move execution
+- `requestMove()`: Makes API call for computer move
 
 ### Game Class
-Coordinates between components:
-- Initializes game state
-- Handles player moves
-- Coordinates between UI updates and computer moves
-- Manages game reset functionality
 
-## Critical Game State Management
+Coordinates game components:
 
-### Last Move Tracking
-The game heavily relies on the last-move element's dataset attributes:
+```javascript
+{
+    gameState: GameState,
+    uiManager: UIManager,
+    computerPlayer: ComputerPlayer
+}
+```
+
+Key Methods:
+- `handleCellClick(board, cell)`: Processes player moves
+- `loadSelectedGame()`: Loads selected game state
+- `reset()`: Resets game state
+
+## State Management
+
+### Game State
+
+Game state is managed through two mechanisms:
+1. The `GameState` class for core game logic
+2. DOM data attributes for move tracking
+
+Critical State Elements:
 ```html
 <h2 id="last-move" data-last-board="-1" data-last-cell="-1"></h2>
 ```
-These dataset attributes are crucial for:
-- Determining legal moves
-- Communicating with the AI
-- Tracking game progression
+
+These dataset attributes are used for:
+- Move validation
+- AI communication
+- Legal move determination
+
+### Game Persistence
+
+Games are automatically persisted with:
+- Unique game IDs (UUID)
+- Automatic saving after each move
+- Load functionality via dropdown
+
+## Move Processing
 
 ### Move Validation
-Legal moves are determined by:
-1. Checking if cell is empty
-2. Checking if it's the computer's turn
-3. Checking if the move is in the correct board (based on last move)
-4. Special cases:
-   - First move (all cells legal)
-   - Target board is won/full (can play anywhere)
 
-### Board State Updates
-The board updates follow this sequence:
-1. Human makes move:
-   - Update game state
-   - Update UI
-   - Update last move tracking
-2. Computer responds:
-   - API call made
-   - Response processed
-   - Board updated
-   - UI refreshed
-   - Last move tracking updated
+Moves are validated by checking:
+1. Cell availability
+2. Computer thinking status
+3. Target board requirements
+4. Game completion status
+
+Special Cases:
+- First move: Any cell is legal
+- Won/full target board: Can play anywhere
+
+### Move Execution Flow
+
+1. Player Move:
+   ```javascript
+   handleCellClick(board, cell)
+   ↓
+   gameState.makeMove()
+   ↓
+   uiManager.updateLastMove()
+   ↓
+   uiManager.renderBoard()
+   ```
+
+2. Computer Move:
+   ```javascript
+   computerPlayer.makeMove()
+   ↓
+   requestMove() API call
+   ↓
+   Process response
+   ↓
+   Update UI
+   ```
 
 ## API Integration
 
-### Request Format
+### Computer Move Request
 ```javascript
 {
+    game_id: string,
     last_move: [boardIndex, cellIndex, "X"],
-    game_board: [9x9 array],
-    compute_time: seconds,
+    game_board: Array[9][9],
+    compute_time: number,
     force_full_time: boolean
 }
 ```
 
-### Response Format
+### Computer Move Response
 ```javascript
 {
     board: number,
@@ -120,49 +182,72 @@ The board updates follow this sequence:
         num_gamestates: number,
         depth_explored: number,
         thinking_time: number,
-        predicted_line: array,
-        moves: array
+        moves: Array
     }
 }
 ```
 
-## Important Implementation Details
+## UI Features
 
-### Move Validation Sequence
-1. Click handler activated
-2. Move validation checked
-3. If valid:
-   - Update board state
-   - Update UI
-   - Trigger computer move
-   - Update UI again after computer move
+### Game Controls
+- Compute time slider (5-60 seconds)
+- Force full compute time option
+- Game loading dropdown
+- Reset button
 
-### UI Update Sequence
-1. Clear board
-2. Render current state
-3. Update legal moves
-4. Update metadata
-5. Check for winner
+### Game Information
+- Last move indicator
+- Winner display
+- Computer thinking indicator
+- Move metadata display
 
-### State Management Notes
-- Game state is tracked both in JavaScript (GameState class) and DOM (dataset attributes)
-- This dual tracking is intentional for compatibility with the original implementation
-- The last-move dataset attributes are the source of truth for move validation
+## Best Practices
 
-## Known Quirks
-1. Double JSON stringification in API calls is required
-2. Last move tracking relies on DOM dataset attributes rather than pure JS state
-3. Move validation combines both GameState and DOM checks
+### Error Handling
+- API call error catching
+- Move validation checks
+- State consistency verification
 
-## Debug Tips
-1. Check console for API call errors
-2. Verify last-move dataset attributes after moves
-3. Monitor board state in GameState.board
-4. Verify UI updates after both human and computer moves
+### State Updates
+1. Validate move
+2. Update game state
+3. Update UI
+4. Process computer response
+5. Update UI again
+
+### Performance Considerations
+- Efficient DOM updates
+- Minimal state duplication
+- Proper async/await usage
+
+## Debug Guidance
+
+Common Issues:
+1. Move validation failures
+2. API communication errors
+3. State synchronization problems
+4. UI update timing
+
+Debug Steps:
+1. Check console logs
+2. Verify state consistency
+3. Confirm API request/response format
+4. Validate UI update sequence
 
 ## Future Improvements
-1. Move state management entirely to GameState class
-2. Implement proper TypeScript interfaces
-3. Add comprehensive error handling
-4. Add unit tests
-5. Improve documentation with JSDoc
+
+1. State Management
+   - Move to pure JavaScript state
+   - Remove DOM data dependencies
+   - Implement proper state machine
+
+2. Code Quality
+   - Add TypeScript
+   - Implement unit tests
+   - Add error boundaries
+
+3. Features
+   - Undo/redo functionality
+   - Game replay
+   - Move analysis
+   - Local multiplayer

@@ -1,19 +1,153 @@
-## MCTS for Ultimate Tic Tac Toe
-This is a project to create an Ultimate tic tac toe AI agent using MCTS. For the rules of UTTT see the [wikipedia](https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe) page
+# Ultimate Tic-Tac-Toe with MCTS AI
 
+A sophisticated implementation of Ultimate Tic-Tac-Toe featuring a Monte Carlo Tree Search (MCTS) AI player, persistent game storage, and an interactive web interface.
 
-### Theory and Implementation
-Here I will not go into a full description of MCTS. For that, see this [survey](http://www.incompleteideas.net/609%20dropbox/other%20readings%20and%20resources/MCTS-survey.pdf). I will instead describe my specific program.
+## Features
 
-This is a MCTS agent using UBC1 scores for move selection. MCTS faces two key challenges. Once challenge is that it usually requires a board heuristic function (the same problem faced by min-max approaches). For this I use the Russell-Norvig Tic-Tac-Toe board score function (see [here](https://john.cs.olemiss.edu/~dwilkins/CSCI531/fall12/slides/AI_09_games.pdf)) applied recursively to mini-boards. 
+- 🎮 Full Ultimate Tic-Tac-Toe gameplay
+- 🤖 Advanced MCTS-based AI opponent
+- 💾 Game persistence with save/load functionality
+- 📊 Real-time AI analysis and move statistics
+- ⚙️ Configurable AI computation time
+- 🌐 Clean, responsive web interface
 
-The second challenge is how you simulate opponent behavior. Obviously if we just applied the same MCTS algorithm we'd have a recursive loop. If instead we do something very basic and simple then it might not be a good predictor of their moves (however this is a common strategy and can work in conjunction with massive amounts of compute.) Here I take a hybrid approach. for opponent moves I use a smaller MCTS and for that MCTS I simulate opponent behavior using a simple greedy strategy. So there is essentially only one level or recursion. 
+## Quick Start
 
-Overall the bot performs reasonably well. It can usually beat new or weak opponents. It can sometimes draw with even strong opponents. However a player with a firm grasp of the game can usually beat it. for best results use at least 15-20 or more seconds of compute per computer move. I have not tested it but I suspect that it is better than simple min-max strategies.
+### Prerequisites
+- Python 3.8+
+- Node.js 14+ (for frontend development)
+- Modern web browser
 
-### Web interface usage
-To run from the web interface (preferred) run python flask_server.py Then in your preferred web browser open up uttt.html. From there it should be very intuitive. you can select how many seconds to allow for each computer move and after each move some metadata (how many states considered, which moves it considered along with their scores etc.) will be displayed. It should look like this:
-<img src="/docs/uttt_game_example.png" alt="UTTT game example"/>
+### Installation
 
-### Command line usage
-To run this program from the command line simply run python runner.py, and the game will start. Edit the runner file to change how many seconds the computer gets to think on each move. Specifically edit the run_game method.
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ultimate-tictactoe.git
+cd ultimate-tictactoe
+```
+
+2. Set up development environment:
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create and activate virtual environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+uv sync
+```
+
+### Running the Game
+
+1. Start the backend server:
+```bash
+invoke run-server
+# Or specify a custom port:
+invoke run-server --port 8000
+```
+
+2. Open `index.html` in your web browser
+
+## Game Rules
+
+Ultimate Tic-Tac-Toe is played on nine small tic-tac-toe boards arranged in a 3×3 grid. To win, you must win three small boards in a row. The twist: your opponent's move determines which board you must play in next.
+
+For detailed rules, see the [Wikipedia page](https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe).
+
+## Technical Implementation
+
+### Frontend Architecture
+- Vanilla JavaScript with component-based structure
+- Real-time game state management
+- Responsive UI with move highlighting
+- Game persistence interface
+
+Key components:
+- `GameState`: Core game logic
+- `UIManager`: DOM and rendering
+- `ComputerPlayer`: AI interface
+
+### Backend Architecture
+- Flask-based RESTful API
+- MCTS AI implementation
+- Persistent game storage
+- Move analysis system
+
+### AI Implementation
+
+The AI uses Monte Carlo Tree Search with several enhancements:
+- UCB1 for node selection
+- Russell-Norvig scoring function
+- Adaptive computation time
+- Early stopping optimization
+- Move confidence metrics
+
+#### AI Performance
+The AI performs well against:
+- Beginner to intermediate players
+- Tactical play styles
+- Time-pressured situations
+
+For optimal AI performance:
+- Use 15-20 seconds computation time
+- Enable "Force full thinking time" for critical positions
+- Review move metadata for insights
+
+## API Endpoints
+
+### Make Move
+```http
+POST /api/makemove/
+```
+
+### List Games
+```http
+GET /api/games
+```
+
+### Load Game
+```http
+GET /api/games/{game_id}
+```
+
+## Development
+
+### Project Structure
+```
+/ultimate-tictactoe
+├── frontend/           # Web interface
+│   ├── js/            # JavaScript components
+│   └── css/           # Styling
+├── src/               # Backend
+│   ├── core/          # Game engine
+│   ├── ai/            # MCTS implementation
+│   └── utils/         # Utilities
+└── docs/              # Documentation
+```
+
+### Documentation
+- [Frontend Documentation](docs/Frontend.md)
+- [Backend Documentation](docs/Backend.md)
+- [API Documentation](docs/API.md)
+
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Roadmap
+
+See our [detailed roadmap](ROADMAP.md) for planned features and improvements.
+
+## Known Issues
+
+- Game state issues in drawn games
+- End-game AI search depth concerns
+
+## Acknowledgments
+
+- MCTS implementation inspired by the survey paper: "A Survey of Monte Carlo Tree Search Methods"
+- Board evaluation based on Russell-Norvig's game theory principles

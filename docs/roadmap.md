@@ -1,116 +1,104 @@
 # Ultimate Tic-Tac-Toe Development Roadmap
 
-## AI Improvements
+## Immediate Goals
 
-### Core MCTS Enhancements
-- Implement probabilistic opponent modeling using UCT+ principles
-  - Create opponent move probability distributions
-  - Modify MCTS to use expected rewards based on move probabilities
-  - Reference: Monte-Carlo Tree Search in Poker using Expected Reward Distributions
+### Game Management Improvements
+- [ ] Enhanced game list dropdown
+  - [ ] Add game metadata (date created, last played)
+  - [ ] Display number of moves
+  - [ ] Show current game status (in progress, won, drawn)
+  - [ ] Add custom game naming
+- [ ] Game management UI
+  - [ ] Add ability to delete games
+  - [ ] Implement game renaming
+  - [ ] Add game filtering options (by status, date)
+  - [ ] Add confirmation dialogs for destructive actions
 
-- Adaptive thinking time optimization
-  - Monitor score differential between top move choices
-  - Dynamically adjust computation time based on decision complexity
-  - Implement early stopping when confidence threshold is reached
+### MCTS Performance Optimization
+- [ ] Reduce deep copy usage
+  - [ ] Implement state rollback instead of deep copying
+  - [ ] Add efficient board state caching
+  - [ ] Optimize memory usage in tree expansion
+- [ ] Profile and optimize core MCTS operations
+  - [ ] Benchmark current performance
+  - [ ] Identify bottlenecks in tree traversal
+  - [ ] Optimize node expansion strategy
+- [ ] Improve early stopping mechanism
+  - [ ] Refine confidence calculations
+  - [ ] Add more sophisticated stopping criteria
+  - [ ] Better handle endgame scenarios
 
-- Hyperparameter optimization through self-play
-  - Modularize score function implementation
-  - Create tournament system for testing different configurations
-  - Track and analyze performance metrics across variations
+## Mid-term Goals
 
-### Advanced AI Features
-- Implement reinforcement learning capabilities
-  - Develop self-play training pipeline
-  - Experiment with value network integration
-  - Compare performance against pure MCTS approach
+### AI Enhancements
+- [ ] Implement advanced MCTS variants
+  - [ ] Add RAVE (Rapid Action Value Estimation)
+  - [ ] Experiment with progressive widening
+  - [ ] Test different backpropagation strategies
+- [ ] Position evaluation improvements
+  - [ ] Develop better heuristic functions
+  - [ ] Add pattern recognition
+  - [ ] Implement strategic position evaluation
+- [ ] Search optimization
+  - [ ] Add move ordering
+  - [ ] Implement transposition tables
+  - [ ] Test parallel tree search
 
-- Move prediction and analysis
-  - Calculate perplexity scores for player moves
-  - Generate probability distributions for possible moves
-  - Track prediction accuracy over time
-
-### Research and Analysis
-- Conduct search space analysis
-  - Study impact of thinking time on move selection
-  - Identify patterns in move discovery timing
-  - Document particularly interesting or non-obvious moves
-
-- Investigate tree pruning strategies
-  - Research safe pruning methods
-  - Benchmark performance impact
-  - Document trade-offs between speed and completeness
-
-## UI Improvements
-
-### Core Interface
-- Fix move placement during computer turn bug
-  - Implement proper turn locking
-  - Add visual feedback for current turn
-  - Ensure move validation checks
-
-- Enhanced game visualization
-  - Improve board layout and styling
-  - Add move highlighting
-  - Implement responsive design
-
-### Interactive Features
-- Advanced move tree visualization
-  - Create interactive game tree display
-  - Show probability distributions
-  - Visualize AI confidence levels
-
-- AI Commentary Integration
-  - Connect with LLM API for move analysis
-  - Generate contextual commentary
-  - Implement "trash talk" feature
-  - Add personality settings
-
-### User Experience
-- Game state management
-  - Add undo/redo functionality
-  - Implement game save/load
-  - Add replay feature
-
-- Settings and customization
-  - Adjustable AI difficulty
-  - Customizable UI themes
-  - Sound effects and animations
-
-- add invoke option for running on different port. 
-
-## Known Bugs
-
-### Critical
-
-### Performance
-
-- I am not sure that the AI is fully searching towards the end game. Maybe when victories and loses are in sight something breaks. 
-
-## Infrastructure & Data
-
-- Game seems to break if you reach a drawn game ending with all boards filled
-
-### Game Logging
-- Implement comprehensive game logging system
-  - Record all moves and timestamps
-  - Store AI decision metrics and confidence levels
-  - Track game outcomes and statistics
-  - Enable game replay from logs
-  - Support analysis of playing patterns
-
-### Deployment & Hosting
-- Improve hosting infrastructure
-  - Evaluate cloud hosting options
-  - Implement proper deployment pipeline
-  - Set up monitoring and analytics
-  - Consider scalability requirements
-  - Add backup and recovery systems
+### Game Analysis Features
+- [ ] Move quality assessment
+  - [ ] Calculate move strength metrics
+  - [ ] Identify critical positions
+  - [ ] Highlight potential blunders
+- [ ] Game statistics tracking
+  - [ ] Track win rates and patterns
+  - [ ] Generate performance metrics
+  - [ ] Create player profiles
 
 ## Future Considerations
 
-- Multi-player support
-- Tournament mode
-- Training mode with move suggestions
-- Performance analytics dashboard
-- Historical game analysis dashboard
-- API for external integrations
+### Advanced Features
+- [ ] AI difficulty levels
+  - [ ] Implement adjustable play strength
+  - [ ] Add personality-based play styles
+  - [ ] Create teaching mode
+- [ ] Multi-player support
+  - [ ] Local multiplayer
+  - [ ] Game sharing via URLs
+  - [ ] Optional move timer
+- [ ] Learning capabilities
+  - [ ] Add game database for learning
+  - [ ] Implement basic position learning
+  - [ ] Add pattern recognition training
+
+### UI/UX Improvements
+- [ ] Enhanced visualizations
+  - [ ] Add move tree display
+  - [ ] Show AI confidence visualization
+  - [ ] Improve board highlighting
+- [ ] Accessibility improvements
+  - [ ] Add keyboard controls
+  - [ ] Improve screen reader support
+  - [ ] Add high contrast mode
+
+## Known Issues
+
+### Critical
+- [ ] Fix drawn game handling
+- [ ] Improve endgame search behavior
+- [ ] Handle interrupted computer moves
+
+### Performance
+- [ ] Reduce memory usage during long games
+- [ ] Optimize state management
+- [ ] Improve loading times for game list
+
+### UI
+- [ ] Fix move placement during computer turns
+- [ ] Improve mobile responsiveness
+- [ ] Add better error messages
+
+## Technical Debt
+- [ ] Add comprehensive test suite
+- [ ] Improve code documentation
+- [ ] Refactor state management
+- [ ] Clean up deprecated features
