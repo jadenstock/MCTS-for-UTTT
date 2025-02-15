@@ -27,16 +27,16 @@ class GameStorage:
         # Add current move to history
         game_data["moves"].append({
             "move_number": len(game_data["moves"]) + 1,
-            "board": game_state.last_move[0],
-            "cell": game_state.last_move[1],
-            "player": game_state.last_move[2],
+            "board": game_state.move_stack[-1][0],
+            "cell": game_state.move_stack[-1][1],
+            "player": game_state.move_stack[-1][2],
             "metadata": move_metadata if move_metadata else None
         })
 
         # Update current state
         game_data["current_state"] = {
             "board": [b.cells for b in game_state.board.boards],
-            "last_move": game_state.last_move,
+            "last_move": game_state.move_stack[-1],
             "next_to_move": game_state.next_to_move,
             "winner": game_state.board.winner
         }

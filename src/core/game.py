@@ -58,42 +58,69 @@ class Board:
 class Game:
     def __init__(self):
         self.board = Board()
-        self.last_move = None  # tuple (i,j,s) meaning s was placed on position j in board i.
+        self.move_stack = [] # tuple (i,j,s) meaning s was placed on position j in board i.
         self.next_to_move = "x"
+
+    def evaluate_winners(self):
+        """Evaluate and update all winners based on current board state"""
+        for board in self.board.boards:
+            board.winner = board.evaluate_winner()
+        self.board.winner = self.board.evaluate_winner()
 
     def legal_moves(self):
         # if the game is over, stop returning legal moves
         if self.board.winner != "":
             return []
-        # if it's the first move, the target board is won, or the target board is full, go anywhere.
-        if ((self.last_move == None) or
-            ((self.board.boards[self.last_move[1]].winner != "") or
-             len(self.board.boards[self.last_move[1]].legal_cells()) == 0)):
+
+        # Get last move from stack
+        last_move = self.move_stack[-1] if self.move_stack else None
+
+        # if it's the first move, the target board is won, or the target board is full, go anywhere
+        if (last_move is None or
+                (self.board.boards[last_move[1]].winner != "") or
+                len(self.board.boards[last_move[1]].legal_cells()) == 0):
             return list(itertools.chain(*[[(i, j) for j in self.board.boards[i].legal_cells()]
-                                        for i in range(9)]))
+                                          for i in range(9)]))
         else:
-            return [(self.last_move[1], x) for x in self.board.boards[self.last_move[1]].legal_cells()]
+            # Must play in the board corresponding to the last move's cell
+            return [(last_move[1], x) for x in self.board.boards[last_move[1]].legal_cells()]
 
     def make_move(self, i, j, s):
-        if ((s != self.next_to_move) or (i,j) not in set(self.legal_moves())):
-            print("({},  {}) is not a valid move".format(i,j))
-            return
-        if (self.board.winner != "") or (len(self.legal_moves()) == 0):
-            return  # stop altering board state when game is finished
+        # check conditions to not do anything
+        if ((s != self.next_to_move) or (self.board.winner != "")):
+            print("({}, {}) is not a valid move".format(i, j))
+            return False
+        legal_moves = self.legal_moves()
+        if (((i, j) not in legal_moves) or (len(legal_moves) == 0)):
+            print("({}, {}) is not a legal move".format(i, j))
+            return False
+        # edit game state
+        self.move_stack.append((i, j, s))
         self.board.boards[i].cells[j] = s
-        self.board.boards[i].winner = self.board.boards[i].evaluate_winner()
-        self.board.winner = self.board.evaluate_winner()
-        self.last_move = (i,j,s)
-        self.next_to_move = "x" if s=="o" else "o"
+        self.evaluate_winners()
+        self.next_to_move = "x" if s == "o" else "o"
+        return True
+
+    def undo_last_move(self):
+        if not self.move_stack:
+            return False
+        board_idx, cell_idx, player = self.move_stack.pop()
+        self.board.boards[board_idx].cells[cell_idx] = ""
+        self.evaluate_winners()
+        self.next_to_move = player
+        return True
 
     def greedy_next_move(self):
         best_move = None
         best_move_score = -float("inf")
         for m in self.legal_moves():
-            c = copy.deepcopy(self)
-            p = c.next_to_move  # who's turn is it?
-            c.make_move(m[0], m[1], p)  # make move
-            s = c.board.score(p)  # how did that fair for the person who just moved?
+            # Make the move directly on our current state
+            self.make_move(m[0], m[1], self.next_to_move)
+            # Evaluate score
+            s = self.board.score(self.next_to_move)
+            # Undo the move to restore previous state
+            self.undo_last_move()
+
             if s > best_move_score:
                 best_move_score = s
                 best_move = m
@@ -109,8 +136,8 @@ class Game:
             self.execute_greedy_next_move()
 
     def __repr__(self):
-        return "{\"last_move\":{}, \"board\":{}}".format(
-            self.last_move, [b.cells for b in self.board.boards])
+        return "{\"move stack\":{}, \"board\":{}}".format(
+            self.move_stack, [b.cells for b in self.board.boards])
 
     def __str__(self):
         # Format the game board as a string representation
@@ -134,11 +161,11 @@ class Game:
         return "\n".join(rows)
 
 
-def make_game(game_board, last_move):
+def make_game(game_board, move_stack):
     """Create a game instance from a board state and last move"""
     g = Game()
-    g.last_move = last_move
-    g.next_to_move = "x" if last_move[2].lower() == "o" else "o"
+    g.move_stack = move_stack
+    g.next_to_move = "x" if move_stack[-1][2].lower() == "o" else "o"
     for i, b in enumerate(g.board.boards):
         b.cells = [l.lower() for l in game_board[i]]
         b.winner = b.evaluate_winner()

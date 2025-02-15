@@ -20,9 +20,9 @@ def make_move():
 
     # Create game instance from current board state after human move
     g = make_game(data["game_board"],
-                  [int(data["last_move"][0]),
+                  [(int(data["last_move"][0]),
                    int(data["last_move"][1]),
-                   data["last_move"][2].lower()])
+                   data["last_move"][2].lower())])
 
     # Save human move if we have a game_id
     if game_id:
@@ -35,7 +35,7 @@ def make_move():
 
     # Apply computer's move and record it as the last move
     g.make_move(m[0], m[1], g.next_to_move)
-    g.last_move = (m[0], m[1], 'o')  # Explicitly set last_move to computer's move
+    g.move_stack.append((m[0], m[1], 'o'))  # Explicitly set last_move to computer's move
 
     # Save after computer's move
     if game_id:

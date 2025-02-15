@@ -124,12 +124,12 @@ class SimulationTreeNode:
 def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEFAULT_NODE_LIMIT,
                       C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", force_full_time=False, verbose=True, metadata=True):
 
-    if (game.last_move == None) or (game.last_move[2] == "o"):
-        next_to_move = "x"
-    elif (game.last_move[2] == "x"):
-        next_to_move = "o"
-    else:
-        print("last to move is invalid: {}".format(game.last_move[2]))
+    #if (game.move_stack == []) or (game.move_stack[-1][2] == "o"):
+    #    next_to_move = "x"
+    #elif (game.move_stack[-1][2] == "x"):
+    #    next_to_move = "o"
+    #else:
+    #    print("last to move is invalid: {}".format(game.move_stack[-1][2]))
 
     node = SimulationTreeNode(game, game.next_to_move)
 
