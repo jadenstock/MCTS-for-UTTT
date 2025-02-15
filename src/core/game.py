@@ -88,11 +88,9 @@ class Game:
     def make_move(self, i, j, s):
         # check conditions to not do anything
         if ((s != self.next_to_move) or (self.board.winner != "")):
-            print("({}, {}) is not a valid move".format(i, j))
             return False
         legal_moves = self.legal_moves()
         if (((i, j) not in legal_moves) or (len(legal_moves) == 0)):
-            print("({}, {}) is not a legal move".format(i, j))
             return False
         # edit game state
         self.move_stack.append((i, j, s))

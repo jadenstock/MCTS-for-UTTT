@@ -22,6 +22,88 @@ def three_in_a_row(arr):
     return ""
 
 
+def game_value_experimental(board, s, win_score=20, lose_score=-20):
+    """Enhanced scoring function for Tic-Tac-Toe that considers:
+    1. Immediate wins/losses
+    2. Two-in-a-row opportunities with different weights based on position
+    3. Center and corner control
+    4. Blocking opponent's opportunities
+    5. Fork opportunities (multiple winning paths)
+    """
+    t = "o" if s == "x" else "x"  # Opponent's symbol
+    score = 0
+
+    # Define all possible lines
+    rows = [board[:3], board[3:6], board[6:]]
+    cols = [board[0::3], board[1::3], board[2::3]]
+    diags = [[board[0], board[4], board[8]], [board[2], board[4], board[6]]]
+    all_lines = rows + cols + diags
+
+    # Check for immediate wins/losses
+    for line in all_lines:
+        if line.count(s) == 3:
+            return win_score
+        if line.count(t) == 3:
+            return lose_score
+
+    # Center control (most valuable position)
+    if board[4] == s:
+        score += 4
+    elif board[4] == t:
+        score -= 4
+
+    # Corner control (second most valuable positions)
+    corners = [0, 2, 6, 8]
+    for corner in corners:
+        if board[corner] == s:
+            score += 2
+        elif board[corner] == t:
+            score -= 2
+
+    # Evaluate each line for opportunities
+    fork_opportunities_s = 0  # Count potential forks for player
+    fork_opportunities_t = 0  # Count potential forks for opponent
+
+    for line in all_lines:
+        # Two-in-a-row with open space
+        if line.count(s) == 2 and line.count('') == 1:
+            # Weight based on if it uses center or corner
+            if 4 in [i for i, x in enumerate(line) if x == s]:
+                score += 6  # Higher weight for center-based threats
+            elif any(i in corners for i, x in enumerate(line) if x == s):
+                score += 4  # Medium weight for corner-based threats
+            else:
+                score += 3  # Lower weight for edge-based threats
+
+        # Opponent's two-in-a-row
+        if line.count(t) == 2 and line.count('') == 1:
+            if 4 in [i for i, x in enumerate(line) if x == t]:
+                score -= 6
+            elif any(i in corners for i, x in enumerate(line) if x == t):
+                score -= 4
+            else:
+                score -= 3
+
+        # Count potential fork opportunities
+        if line.count(s) == 1 and line.count('') == 2:
+            fork_opportunities_s += 1
+        if line.count(t) == 1 and line.count('') == 2:
+            fork_opportunities_t += 1
+
+    # Add fork opportunity scores
+    if fork_opportunities_s >= 2:
+        score += 5  # Bonus for having multiple winning paths
+    if fork_opportunities_t >= 2:
+        score -= 5  # Penalty for allowing opponent multiple paths
+
+    # Normalize score to be within win/lose bounds
+    max_possible = 50  # Maximum possible score from all bonuses
+    normalized_score = ((score + max_possible) * (win_score - lose_score) /
+                        (2 * max_possible)) + lose_score
+
+    return normalized_score
+
+
 def game_value(board, s, win_score=20, lose_score=-20):
     """Return the 'value' of this game for player s.
     Uses classic Russell and Norvig Tic Tac Toe eval function:

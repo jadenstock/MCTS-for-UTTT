@@ -14,7 +14,24 @@
   - [ ] Add game filtering options (by status, date)
   - [ ] Add confirmation dialogs for destructive actions
 
-### MCTS Performance Optimization
+### MCTS Algorithm Enhancements
+- [ ] Implement informed rollout policies
+  - [ ] Add heuristic-guided move selection
+  - [ ] Prioritize tactical moves (wins, blocks)
+  - [ ] Weight moves based on strategic patterns
+  - [ ] Implement rollout policy caching
+- [ ] Progressive History integration
+  - [ ] Track global move success rates
+  - [ ] Implement history-based UCT weights
+  - [ ] Add decay factors for recent games
+  - [ ] Store common board patterns
+- [ ] Hybrid MCTS-Minimax implementation
+  - [ ] Add alpha-beta pruning for endgame positions
+  - [ ] Implement staged transition to exact solving
+  - [ ] Develop position complexity evaluation
+  - [ ] Cache solved sub-positions
+
+### Performance Optimization
 - [ ] Reduce deep copy usage
   - [ ] Implement state rollback instead of deep copying
   - [ ] Add efficient board state caching
@@ -24,23 +41,23 @@
   - [ ] Identify bottlenecks in tree traversal
   - [ ] Optimize node expansion strategy
 - [ ] Improve early stopping mechanism
-  - [ ] Refine confidence calculations
-  - [ ] Add more sophisticated stopping criteria
+  - [ ] Implement variance-based confidence
+  - [ ] Add dynamic exploration constants
   - [ ] Better handle endgame scenarios
 
 ## Mid-term Goals
 
-### AI Enhancements
-- [ ] Implement advanced MCTS variants
-  - [ ] Add RAVE (Rapid Action Value Estimation)
-  - [ ] Experiment with progressive widening
-  - [ ] Test different backpropagation strategies
+### Advanced Search Techniques
+- [ ] Implement RAVE (Rapid Action Value Estimation)
+  - [ ] Add AMAF (All Moves As First) statistics
+  - [ ] Implement RAVE parameter tuning
+  - [ ] Test hybrid RAVE-UCT selection
 - [ ] Position evaluation improvements
-  - [ ] Develop better heuristic functions
-  - [ ] Add pattern recognition
-  - [ ] Implement strategic position evaluation
+  - [ ] Develop pattern-based evaluation
+  - [ ] Add strategic position scoring
+  - [ ] Implement threat detection
 - [ ] Search optimization
-  - [ ] Add move ordering
+  - [ ] Add principal variation move ordering
   - [ ] Implement transposition tables
   - [ ] Test parallel tree search
 
