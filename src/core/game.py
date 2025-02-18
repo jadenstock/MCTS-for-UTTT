@@ -1,7 +1,7 @@
 import itertools
-import copy
 
-from utils.board_utils import three_in_a_row, game_value
+from utils.board_utils import three_in_a_row
+from utils.game_score_utils import score_board, calculate_square_importance
 
 class MiniBoard:
     def __init__(self):
@@ -17,13 +17,6 @@ class MiniBoard:
         else:
             return []
 
-    def score(self, s, win_score=20, lose_score=-20):
-        if self.winner == s:
-            return win_score
-        if ((self.winner != "") and (self.winner != s)):
-            return lose_score
-        return game_value(self.cells, s, win_score=win_score, lose_score=lose_score)
-
 
 class Board:
     def __init__(self):
@@ -34,25 +27,63 @@ class Board:
         boards = [b.winner for b in self.boards]
         return three_in_a_row(boards)
 
-    def score(self, s):
-        # if we only look at won or lost games then we wont know what to do in the early game.
-        # normalize board score to always be in [0,1] with 1 as win and 0 as loss
-        if self.winner == s:
-            return 1
-        if ((self.winner != "") and (self.winner != s)):
-            return 0
+    def score(self, player):
+        """
+        Score a UTTT board position combining winnability and importance metrics.
+        Returns a value between 0 and 1, where:
+        - 1.0 means player has won
+        - 0.0 means opponent has won
+        - Other values indicate position strength based on weighted winnability
+        """
+        opponent = "o" if player == "x" else "x"
 
-        score = 0
-        # best we can get here is something like 20*9 = 180.
-        for i in range(9):
-            score += game_value(self.boards[i].cells, s, win_score=20, lose_score=-20)
+        # Terminal state checks
+        if self.winner == player:
+            return 1.0
+        if self.winner == opponent:
+            return 0.0
 
-        # win and lose score here dont matter. Best we could get is 1000
-        boards = [b.winner for b in self.boards]
-        score += 50 * game_value(boards, s, win_score=1, lose_score=0)
+        # Calculate global board importance
+        global_board = [b.winner for b in self.boards]
+        global_importance_player, global_importance_opp = calculate_square_importance(global_board)
 
-        # max a score could be is -1200<->1200 so add 1200 and divide by 2400
-        return (score + 1200) / 2400.0
+        # Initialize aggregated score components
+        total_weighted_score = 0.0
+        total_weight = 0.0
+
+        # Evaluate each mini-board
+        for i, mini_board in enumerate(self.boards):
+            # Skip won boards
+            if mini_board.winner != "":
+                continue
+
+            # Calculate winnability for both players in this mini-board
+            winnability_player = score_board(mini_board.cells, player)
+            winnability_opp = score_board(mini_board.cells, opponent)
+
+            # Weight based on global importance of this board
+            board_importance_player = global_importance_player[i]
+            board_importance_opp = global_importance_opp[i]
+
+            # Combine offensive and defensive considerations
+            # Higher weight when board is important to either player
+            board_weight = max(board_importance_player, board_importance_opp)
+
+            # Score this board based on relative winnability
+            # Consider both offensive potential and defensive necessity
+            board_score = (0.7 * winnability_player * board_importance_player -
+                           0.3 * winnability_opp * board_importance_opp)
+
+            total_weighted_score += board_score * board_weight
+            total_weight += board_weight
+
+        # If no boards can be won, return neutral score
+        if total_weight == 0:
+            return 0.1
+
+        # Normalize final score to [0, 1] range
+        final_score = (total_weighted_score / total_weight + 1) / 2
+        return max(0.0, min(0.9, final_score))  # Cap at 0.9 to reserve 1.0 for won positions
 
 
 class Game:
