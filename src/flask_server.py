@@ -63,6 +63,26 @@ def get_game(game_id):
     return jsonify({"error": "Game not found"}), 404
 
 
+@app.route('/api/games/rename/<game_id>', methods=['POST', 'OPTIONS'])
+@flask_cors.cross_origin()
+def rename_game(game_id):
+    try:
+        data = request.get_json()
+        new_name = data.get('name')
+        print(f"Renaming game {game_id} to {new_name}")  # Debug log
+        if not new_name:
+            return jsonify({"error": "Name is required"}), 400
+        success = storage.rename_game(game_id, new_name)
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"error": "Game not found"}), 404
+
+    except Exception as e:
+        print(f"Error renaming game: {e}")
+        return jsonify({"error": "Server error"}), 500
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the UTTT Flask server')
     parser.add_argument('--port', type=int, default=5000, help='Port to run the server on')

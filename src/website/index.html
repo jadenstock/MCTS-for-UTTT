@@ -44,6 +44,10 @@
         <h2 id="last-move" data-last-board="-1" data-last-cell="-1"></h2>
         <h2 id="winner" data-winner=""></h2>
         <div class="button-container">
+            <div class="game-name-container">
+                <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">
+                <button onclick="game.updateGameName()" class="rename-button">Rename</button>
+            </div>
             <select id="saved-games" class="game-select">
                 <option value="">Select a game...</option>
             </select>

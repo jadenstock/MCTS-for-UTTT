@@ -47,6 +47,30 @@ class GameStorage:
             json.dump(game_data, f)
         temp_path.replace(path)
 
+    def rename_game(self, game_id: str, new_name: str) -> bool:
+        """Create a new save file with new game_id"""
+        old_path = self.data_dir / f"{game_id}.json"
+        if not old_path.exists():
+            return False
+
+        try:
+            with open(old_path) as f:
+                game_data = json.load(f)
+
+            # Create new save with new game_id and same content
+            game_data["game_id"] = new_name  # Use the new name as the game_id
+
+            # Save to new file
+            new_path = self.data_dir / f"{new_name}.json"
+            temp_path = new_path.with_suffix('.tmp')
+            with open(temp_path, 'w') as f:
+                json.dump(game_data, f)
+            temp_path.replace(new_path)
+            return True
+        except Exception as e:
+            print(f"Error creating new save file: {e}")
+            return False
+
     def load_game(self, game_id: str) -> Optional[Dict[str, Any]]:
         """Load game data by ID"""
         path = self.data_dir / f"{game_id}.json"

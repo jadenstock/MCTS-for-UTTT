@@ -264,3 +264,20 @@ button:active {
     background: white;
     min-width: 200px;
 }
+
+.game-name-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.game-name-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex-grow: 1;
+}
+
+.rename-button {
+    padding: 8px 16px;
+}

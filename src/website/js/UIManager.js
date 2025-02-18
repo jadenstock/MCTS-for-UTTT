@@ -28,6 +28,7 @@ class UIManager {
         this.movesElement = document.getElementById("metadata-moves");
         this.thinkingMessage = document.getElementById("thinking-message");
         this.savedGamesSelect = document.getElementById("saved-games");
+        this.gameNameInput = document.getElementById("game-name");
         console.log("Saved games select element:", this.savedGamesSelect);
     }
 
@@ -51,13 +52,19 @@ class UIManager {
             games.forEach(game => {
                 const option = document.createElement('option');
                 option.value = game.game_id;
-                option.textContent = `Game ${game.game_id.slice(0, 8)}...`;
+                option.textContent = game.name || `Game ${game.game_id.slice(0, 8)}...`;
                 this.savedGamesSelect.appendChild(option);
             });
 
             console.log("Dropdown updated successfully");
         } catch (error) {
             console.error('Failed to load games list:', error);
+        }
+    }
+
+    updateGameName(name) {
+        if (this.gameNameInput) {
+            this.gameNameInput.value = name;
         }
     }
 
@@ -70,6 +77,11 @@ class UIManager {
             this.gameState.board = gameData.current_state.board;
             this.gameState.gameId = gameData.game_id;
             this.gameState.moveNumber = gameData.moves.length + 1;
+
+            // Update game name if it exists
+            if (gameData.name) {
+                this.updateGameName(gameData.name);
+            }
 
             // Update last move tracking
             const lastMove = gameData.current_state.last_move;
@@ -227,6 +239,7 @@ class UIManager {
         this.lastMoveElement.innerHTML = "";
         this.lastMoveElement.dataset.lastBoard = -1;
         this.lastMoveElement.dataset.lastCell = -1;
+        this.gameNameInput.value = "";  // Reset game name input
 
         // Reset metadata displays
         document.getElementById("metadata-nodes-evaluated").innerHTML =

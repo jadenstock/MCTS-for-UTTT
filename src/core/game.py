@@ -79,7 +79,7 @@ class Board:
 
         # If no boards can be won, return neutral score
         if total_weight == 0:
-            return 0.1
+            return 0.0
 
         # Normalize final score to [0, 1] range
         final_score = (total_weighted_score / total_weight + 1) / 2

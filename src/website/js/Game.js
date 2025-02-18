@@ -54,6 +54,46 @@ class Game {
         this.uiManager.reset();
         this.uiManager.renderBoard();
     }
+
+    // Add to the Game class
+    updateGameName() {
+        const nameInput = document.getElementById('game-name');
+        const newName = nameInput.value.trim();
+
+        if (!newName) {
+            alert('Please enter a valid game name');
+            return;
+        }
+
+        if (!this.gameState.gameId) {
+            alert('No active game to rename');
+            return;
+        }
+
+        // Call the API to update the name
+        fetch(GAME_CONSTANTS.API_ENDPOINTS.UPDATE_GAME_NAME(this.gameState.gameId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: newName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.uiManager.updateGameName(newName);
+                this.uiManager.updateSavedGamesDropdown();
+            } else {
+                alert('Failed to update game name');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating game name:', error);
+            alert('Failed to update game name');
+        });
+    }
 }
 
 // Initialize the game
