@@ -119,3 +119,19 @@
 - [ ] Improve code documentation
 - [ ] Refactor state management
 - [ ] Clean up deprecated features
+
+
+# Next steps
+# add a 'go back' button to UI and have it impact the save state (makes end game testing work nice)
+# show the game name in UI
+# fix bug where winner isn't caluclated at end of game
+
+# display on screen what computer thinks my next move will be (or top 3)
+  # for debuggability
+
+# find back-end improvements for efficiency
+# Create config of most important params, create a tournament to test them
+  # requires some sort of self play mechanism, Can happen entirly on backend but using the flask to make moves?
+
+
+# Major bug, I can place on a board thats been won and the computer coutner moves. Issues in front end and back end?

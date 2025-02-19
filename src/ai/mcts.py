@@ -1,7 +1,6 @@
 import copy
 import time
 import math
-import gc
 
 from config import *
 
@@ -67,12 +66,13 @@ class SimulationTreeNode:
             child = child.children[m]
         return line
 
-    def get_best_action_by_ucb1(self, C=DEFAULT_UCB_CONSTANT):
+    def get_best_action_by_ucb1(self, C):
+        """Pure UCB1 implementation with externally controlled constant"""
         action = None
         best_score = -float("inf")
         for m, c in self.children.items():
             ucb = (c.total_score / float(c.number_of_plays)) + (
-                2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays)))
+                    2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays)))
             if ucb >= best_score:
                 best_score = ucb
                 action = m
@@ -87,25 +87,21 @@ class SimulationTreeNode:
         child_game = copy.deepcopy(self.game)
         child_game.make_move(m[0], m[1], child_game.next_to_move)
 
-        if opp_strat.lower() == "mcts":
-            if len(game_path) <= 1:
-                s = comp_dist[0]
-            elif (len(game_path) > 2) and (len(game_path) <= 4):
-                s = comp_dist[1]
-            else:
-                s = comp_dist[2]
-            n = evaluate_next_move(child_game, seconds_limit=s, node_limit=DEFAULT_OPPONENT_NODE_LIMIT,
-                                 C=DEFAULT_UCB_CONSTANT, verbose=False)
-            if n is not None:
-                child_game.make_move(n[0], n[1], child_game.next_to_move)
-            gc.collect()
-        else:
-            child_game.run_n_greedy_moves(1)
-
+        # Create the child node with initial game state
         self.children[m] = SimulationTreeNode(child_game, self.player)
-        score = self.children[m].game.board.score(self.player)
+
+        # Create a separate game for simulation
+        simulation_game = copy.deepcopy(child_game)
+
+        # Simulate until game is over
+        while simulation_game.board.winner == "" and len(simulation_game.legal_moves()) > 0:
+            simulation_game.run_n_greedy_moves(1)
+
+        # Score the terminal state
+        score = simulation_game.board.score(self.player)
         self.children[m].total_score = score
 
+        # Backpropagate the result
         for node in game_path:
             node.number_of_plays += 1
             node.total_score += score
@@ -113,24 +109,29 @@ class SimulationTreeNode:
                 node.depth_seen = len(game_path)
 
     def expand_tree_by_one(self, game_path=[], C=DEFAULT_UCB_CONSTANT, opp_strat="greedy",
-                          comp_dist=COMP_DIST_MEDIUM_MOVES):
+                           comp_dist=COMP_DIST_MEDIUM_MOVES):
         if len(self.unseen_children) != 0:
             self.expand_one_child(game_path=game_path, opp_strat=opp_strat, comp_dist=comp_dist)
         else:
             if len(self.children) > 0:
-                m = self.get_best_action_by_ucb1(C=C)
+                m = self.get_best_action_by_ucb1(C)
                 self.children[m].expand_tree_by_one(game_path=game_path + [self], opp_strat=opp_strat)
 
+
+def calculate_ucb_constant(elapsed_time, total_time, num_moves, base_constant=DEFAULT_UCB_CONSTANT):
+    """Calculate dynamic UCB constant based on search progress and position complexity"""
+    # Time-based scaling - explore more early, exploit more later
+    time_ratio = elapsed_time / total_time
+    time_factor = 1.0 + (1.0 - time_ratio)  # Starts at 2.0, ends at 1.0
+
+    # Branching factor scaling - explore more in complex positions
+    branching_factor = min(1.0 + (num_moves / 20.0), 2.0)  # Cap at 2x
+
+    return base_constant * time_factor * branching_factor
+
+
 def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEFAULT_NODE_LIMIT,
-                      C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", force_full_time=False, verbose=True, metadata=True):
-
-    #if (game.move_stack == []) or (game.move_stack[-1][2] == "o"):
-    #    next_to_move = "x"
-    #elif (game.move_stack[-1][2] == "x"):
-    #    next_to_move = "o"
-    #else:
-    #    print("last to move is invalid: {}".format(game.move_stack[-1][2]))
-
+                       C=DEFAULT_UCB_CONSTANT, opp_strat="greedy", force_full_time=False, verbose=True, metadata=True):
     node = SimulationTreeNode(game, game.next_to_move)
 
     # Set opponent strategy computation distribution
@@ -152,21 +153,26 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
             comp_dist = COMP_DIST_FEW_MOVES
 
     min_time = min(3, seconds_limit * MIN_TIME_RATIO)
-    t = time.time()
-    last_check_time = t
+    start_time = time.time()
+    last_check_time = start_time
 
-    while (time.time() - t <= seconds_limit) and (node.number_of_plays < node_limit):
-        node.expand_tree_by_one(C=C, opp_strat=opp_strat, comp_dist=comp_dist)
+    while (time.time() - start_time <= seconds_limit) and (node.number_of_plays < node_limit):
+        # Calculate dynamic UCB constant
+        elapsed_time = time.time() - start_time
+        dynamic_C = calculate_ucb_constant(elapsed_time, seconds_limit, l, C)
+
+        node.expand_tree_by_one(C=dynamic_C, opp_strat=opp_strat, comp_dist=comp_dist)
 
         if not force_full_time:
             current_time = time.time()
             if current_time - last_check_time >= CHECK_INTERVAL:
-                if current_time - t >= min_time:
+                if current_time - start_time >= min_time:
                     best_move, confidence = node.get_best_action_and_confidence()
 
                     if ((confidence > CONFIDENCE_HIGH and node.best_move_stable_count >= STABLE_CHECKS_HIGH) or
-                        (confidence > CONFIDENCE_MODERATE and node.best_move_stable_count >= STABLE_CHECKS_MODERATE) or
-                        node.best_move_stable_count >= STABLE_CHECKS_LOW):
+                            (
+                                    confidence > CONFIDENCE_MODERATE and node.best_move_stable_count >= STABLE_CHECKS_MODERATE) or
+                            node.best_move_stable_count >= STABLE_CHECKS_LOW):
                         break
 
                 last_check_time = current_time
@@ -178,9 +184,9 @@ def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEF
             "num_gamestates": node.number_of_plays,
             "depth_explored": node.depth_seen,
             "moves": sorted([(m, node.get_score_of_move(m)) for m in node.children],
-                          key=lambda x: x[1])[::-1],
-            "thinking_time": time.time() - t,
-            "early_stop": not force_full_time and time.time() - t < seconds_limit
+                            key=lambda x: x[1])[::-1],
+            "thinking_time": time.time() - start_time,
+            "early_stop": not force_full_time and time.time() - start_time < seconds_limit
         }
 
         if verbose:

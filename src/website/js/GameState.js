@@ -76,12 +76,29 @@ class GameState {
     }
 
     checkBoardStatus() {
-        this.winner = this.checkGameWinner();
-        this.boardFull = !this.board.some(miniBoard =>
-            miniBoard.some(cell => cell === ""));
+        // First check for a winner
+        const gameWinner = this.checkGameWinner();
+        if (gameWinner) {
+            this.winner = gameWinner;
+            this.boardFull = true;
+            return;
+        }
+
+        // Check if all boards are either won or full
+        const allBoardsWonOrFull = this.board.every((miniBoard, index) => {
+            const boardWon = this.checkBoardWinner(miniBoard) !== "";
+            const boardFull = !miniBoard.includes("");
+            return boardWon || boardFull;
+        });
+
+        if (allBoardsWonOrFull) {
+            this.winner = "draw";
+            this.boardFull = true;
+        }
     }
 
     reset() {
+        this.gameId = crypto.randomUUID();
         this.board = Array(9).fill().map(() => Array(9).fill(""));
         this.moveNumber = 1;
         this.isComputerThinking = false;

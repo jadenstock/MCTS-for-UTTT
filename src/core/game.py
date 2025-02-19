@@ -29,11 +29,11 @@ class Board:
 
     def score(self, player):
         """
-        Score a UTTT board position combining winnability and importance metrics.
+        Score a UTTT board position combining global winning potential with strategic control.
         Returns a value between 0 and 1, where:
         - 1.0 means player has won
         - 0.0 means opponent has won
-        - Other values indicate position strength based on weighted winnability
+        - Other values combine global winning potential (60%) with strategic board control (40%)
         """
         opponent = "o" if player == "x" else "x"
 
@@ -43,47 +43,48 @@ class Board:
         if self.winner == opponent:
             return 0.0
 
-        # Calculate global board importance
+        # Calculate global board and importance metrics
         global_board = [b.winner for b in self.boards]
         global_importance_player, global_importance_opp = calculate_square_importance(global_board)
 
-        # Initialize aggregated score components
-        total_weighted_score = 0.0
+        # Calculate global winning potential (60% weight)
+        global_score = score_board(global_board, player)
+
+        # Calculate strategic control score (40% weight)
+        strategic_score = 0.0
         total_weight = 0.0
 
-        # Evaluate each mini-board
+        # Evaluate each mini-board for strategic control
         for i, mini_board in enumerate(self.boards):
-            # Skip won boards
             if mini_board.winner != "":
                 continue
 
-            # Calculate winnability for both players in this mini-board
+            # Calculate winnability for both players
             winnability_player = score_board(mini_board.cells, player)
             winnability_opp = score_board(mini_board.cells, opponent)
 
-            # Weight based on global importance of this board
-            board_importance_player = global_importance_player[i]
-            board_importance_opp = global_importance_opp[i]
+            # Weight based on global importance
+            board_importance = max(global_importance_player[i],
+                                   global_importance_opp[i])
 
-            # Combine offensive and defensive considerations
-            # Higher weight when board is important to either player
-            board_weight = max(board_importance_player, board_importance_opp)
+            # Score combines offensive potential and defensive necessity
+            board_score = (0.7 * winnability_player * global_importance_player[i] -
+                           0.3 * winnability_opp * global_importance_opp[i])
 
-            # Score this board based on relative winnability
-            # Consider both offensive potential and defensive necessity
-            board_score = (0.7 * winnability_player * board_importance_player -
-                           0.3 * winnability_opp * board_importance_opp)
+            strategic_score += board_score * board_importance
+            total_weight += board_importance
 
-            total_weighted_score += board_score * board_weight
-            total_weight += board_weight
+        # Normalize strategic score
+        if total_weight > 0:
+            strategic_score = (strategic_score / total_weight + 1) / 2
+        else:
+            strategic_score = 0.0
 
-        # If no boards can be won, return neutral score
-        if total_weight == 0:
-            return 0.0
+        # Combine global and strategic scores with 60/40 weighting
+        final_score = 0.65 * global_score + 0.35 * strategic_score
 
-        # Normalize final score to [0, 1] range
-        final_score = (total_weighted_score / total_weight + 1) / 2
-        return max(0.0, min(0.9, final_score))  # Cap at 0.9 to reserve 1.0 for won positions
+        # Ensure score stays in [0, 1] range, reserving 1.0 for won positions
+        return max(0.0, min(0.9, final_score))
 
 
 class Game:

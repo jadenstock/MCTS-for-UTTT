@@ -134,6 +134,10 @@ class UIManager {
                 if (cell) {
                     cell.classList.remove("occupied");
                     cell.style.color = '';
+
+                    if (this.gameState.checkBoardWinner(this.gameState.board[i]) !== "") {
+                        cell.classList.add("occupied");
+                    }
                 }
             });
         });
