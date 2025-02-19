@@ -29,9 +29,7 @@ def make_move():
         storage.save_game(game_id, g, None)  # No metadata for human moves
 
     # Get computer's move
-    force_full_time = bool(data.get("force_full_time", False))
-    m = evaluate_next_move(g, seconds_limit=int(data["compute_time"]),
-                           force_full_time=force_full_time, verbose=False)
+    m = evaluate_next_move(g, seconds_limit=int(data["compute_time"]), verbose=False)
 
     # Apply computer's move and record it as the last move
     g.make_move(m[0], m[1], g.next_to_move)
