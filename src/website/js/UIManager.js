@@ -89,13 +89,58 @@ class UIManager {
             this.lastMoveElement.dataset.lastCell = lastMove[1];
             this.lastMoveElement.innerHTML = `Last move: B${lastMove[0] + 1}C${lastMove[1] + 1}`;
 
-            // Update the UI
+            // Force game state recalculation
+            this.gameState.checkBoardStatus();
+
+            // Render the board and ensure all cells are properly marked
             this.renderBoard();
+            this.forceUpdateCellStates();
             this.updateGameStatus();
+
+            // If it's computer's turn (O), trigger a move
+            if (gameData.current_state.next_to_move === "o") {
+                const computerMove = await window.game.computerPlayer.makeMove();
+                if (computerMove) {
+                    this.gameState.checkBoardStatus();
+                    this.renderBoard();
+                    this.updateGameStatus();
+                }
+            }
 
         } catch (error) {
             console.error('Failed to load game:', error);
         }
+    }
+
+    forceUpdateCellStates() {
+        // Mark all existing moves as occupied
+        this.gameState.board.forEach((miniBoard, boardIndex) => {
+            miniBoard.forEach((cell, cellIndex) => {
+                if (cell) {  // If cell has any value (X or O)
+                    const cellElement = document.querySelector(`#cell_${boardIndex}${cellIndex}`);
+                    if (cellElement) {
+                        cellElement.classList.add("occupied");
+                    }
+                }
+            });
+        });
+
+        // Re-check and mark won boards
+        this.gameState.board.forEach((miniBoard, boardIndex) => {
+            const winner = this.gameState.checkBoardWinner(miniBoard);
+            if (winner) {
+                // Mark all cells in won boards as occupied
+                miniBoard.forEach((_, cellIndex) => {
+                    const cellElement = document.querySelector(`#cell_${boardIndex}${cellIndex}`);
+                    if (cellElement) {
+                        cellElement.classList.add("occupied");
+                    }
+                });
+            }
+        });
+
+        // Update legal moves based on last move
+        this.updateLegalMoves();
     }
 
     renderBoard() {
