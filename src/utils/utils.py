@@ -1,3 +1,12 @@
+import tomllib as toml
+
+LINES = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]  # Diagonals
+    ]
+
+
 def three_in_a_row(arr):
     """Return "x" if "x" has three in a row, return "o" if "o" has a three in a row, else ""
     Cells are arranged as:
@@ -20,3 +29,13 @@ def three_in_a_row(arr):
             return arr[8]
 
     return ""
+
+
+# Load configuration from a TOML file
+def load_agent_config(agent_id="default"):
+    with open("./src/etc/agents_config.toml", "rb") as f:
+        config = toml.load(f)
+
+    if agent_id in config:
+        return config[agent_id]
+    return config["default"]

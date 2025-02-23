@@ -1,6 +1,6 @@
 import itertools
 
-from utils.board_utils import three_in_a_row
+from utils.utils import three_in_a_row, load_agent_config
 from utils.game_score_utils import score_board, calculate_square_importance
 
 class MiniBoard:
@@ -27,13 +27,14 @@ class Board:
         boards = [b.winner for b in self.boards]
         return three_in_a_row(boards)
 
-    def score(self, player):
+    def score(self, player, agent_id='agressive'):
         """
         Score a UTTT board position combining global winning potential with strategic control.
         Returns a value between 0 and 1, where:
-        - 1.0 means player has won
-        - 0.0 means opponent has won
-        - Other values combine global winning potential (60%) with strategic board control (40%)
+          - 1.0 means player has won
+          - 0.0 means opponent has won
+          - Other values combine global winning potential (weighted by global_score_weight)
+            with strategic board control (weighted by strategic_score_weight).
         """
         opponent = "o" if player == "x" else "x"
 
@@ -43,48 +44,51 @@ class Board:
         if self.winner == opponent:
             return 0.0
 
-        # Calculate global board and importance metrics
+        # Load additional configuration parameters for board scoring
+        config = load_agent_config(agent_id=agent_id)
+        global_score_weight   = float(config.get("global_score_weight", 0.65))
+        strategic_score_weight = float(config.get("strategic_score_weight", 0.35))
+        offensive_weight      = float(config.get("offensive_weight", 0.7))
+        defensive_weight      = float(config.get("defensive_weight", 0.3))
+        final_max_score       = float(config.get("final_max_score", 0.9))
+
+        # Global board state
         global_board = [b.winner for b in self.boards]
-        global_importance_player, global_importance_opp = calculate_square_importance(global_board)
+        global_importance_player, global_importance_opp = calculate_square_importance(global_board, agent_id=agent_id)
+        global_score = score_board(global_board, player, agent_id=agent_id)
 
-        # Calculate global winning potential (60% weight)
-        global_score = score_board(global_board, player)
-
-        # Calculate strategic control score (40% weight)
+        # Calculate strategic control score
         strategic_score = 0.0
         total_weight = 0.0
 
-        # Evaluate each mini-board for strategic control
         for i, mini_board in enumerate(self.boards):
             if mini_board.winner != "":
                 continue
 
-            # Calculate winnability for both players
-            winnability_player = score_board(mini_board.cells, player)
-            winnability_opp = score_board(mini_board.cells, opponent)
+            # Evaluate mini-board potentials
+            winnability_player = score_board(mini_board.cells, player, agent_id=agent_id)
+            winnability_opp    = score_board(mini_board.cells, opponent, agent_id=agent_id)
 
             # Weight based on global importance
-            board_importance = max(global_importance_player[i],
-                                   global_importance_opp[i])
+            board_importance = max(global_importance_player[i], global_importance_opp[i])
 
-            # Score combines offensive potential and defensive necessity
-            board_score = (0.7 * winnability_player * global_importance_player[i] -
-                           0.3 * winnability_opp * global_importance_opp[i])
-
+            # Combine offensive and defensive potentials
+            board_score = (offensive_weight * winnability_player * global_importance_player[i] -
+                           defensive_weight * winnability_opp * global_importance_opp[i])
             strategic_score += board_score * board_importance
             total_weight += board_importance
 
-        # Normalize strategic score
+        # Normalize the strategic score
         if total_weight > 0:
             strategic_score = (strategic_score / total_weight + 1) / 2
         else:
             strategic_score = 0.0
 
-        # Combine global and strategic scores with 60/40 weighting
-        final_score = 0.65 * global_score + 0.35 * strategic_score
+        # Combine the global and strategic scores using the configured weights
+        final_score = global_score_weight * global_score + strategic_score_weight * strategic_score
 
-        # Ensure score stays in [0, 1] range, reserving 1.0 for won positions
-        return max(0.0, min(0.9, final_score))
+        # Clamp the score so that wins remain at 1.0 and the rest falls in [0, final_max_score]
+        return max(0.0, min(final_max_score, final_score))
 
 
 class Game:
