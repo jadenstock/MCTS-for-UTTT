@@ -9,11 +9,14 @@ max_score = 0.9
 importance_win_weight = 2.0
 importance_develop_weight = 0.3
 importance_fresh_weight = 0.1
-global_score_weight = 0.65
-strategic_score_weight = 0.35
-offensive_weight = 0.7
-defensive_weight = 0.3
+global_score_weight = 0.6
+strategic_score_weight = 0.4
+offensive_weight = 0.5
+defensive_weight = 0.5
 final_max_score = 0.9
+ucb_constant = 1.414
+rollout_depth = 6
+
 
 [aggressive]
 id="aggressive"
@@ -32,6 +35,7 @@ offensive_weight = 0.8
 defensive_weight = 0.2
 final_max_score = 0.95
 
+
 [defensive]
 id="defensive"
 base_potential = 0.1
@@ -48,4 +52,64 @@ strategic_score_weight = 0.40
 offensive_weight = 0.5
 defensive_weight = 0.5
 final_max_score = 0.85
+
+
+[global_focus]
+id="global_focus"
+base_potential = 0.15
+line_exponent = 1.5
+max_multiplier = 1.5
+weight_best = 0.6
+weight_path = 0.4
+max_score = 0.9
+importance_win_weight = 2.0
+importance_develop_weight = 0.3
+importance_fresh_weight = 0.1
+global_score_weight = 0.75    # Increased global influence
+strategic_score_weight = 0.25  # Reduced tactical influence
+offensive_weight = 0.5
+defensive_weight = 0.5
+final_max_score = 0.9
+ucb_constant = 1.414
+rollout_depth = 6
+
+
+[yielding]
+id="yielding"
+base_potential = 0.15
+line_exponent = 1.5
+max_multiplier = 1.5
+weight_best = 0.6
+weight_path = 0.4
+max_score = 0.9
+importance_win_weight = 2.0
+importance_develop_weight = 0.3
+importance_fresh_weight = 0.15  # Slightly higher to reduce appeal of contested boards
+global_score_weight = 0.65
+strategic_score_weight = 0.35
+offensive_weight = 0.4       # Lower offensive drive
+defensive_weight = 0.6       # Higher emphasis on defense
+final_max_score = 0.9
+ucb_constant = 1.414
+rollout_depth = 6
+
+
+[aggressive_yielding]
+id="aggressive_yielding"
+base_potential = 0.2
+line_exponent = 1.8
+max_multiplier = 1.7
+weight_best = 0.7
+weight_path = 0.3
+max_score = 0.95
+importance_win_weight = 2.0
+importance_develop_weight = 0.3
+importance_fresh_weight = 0.15   # Increased to devalue boards once lost
+global_score_weight = 0.70
+strategic_score_weight = 0.30
+offensive_weight = 0.75         # Still aggressive but...
+defensive_weight = 0.3          # ...a slight boost in defense to encourage yielding lost boards
+final_max_score = 0.95
+ucb_constant = 1.414
+rollout_depth = 6
 

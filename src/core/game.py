@@ -27,7 +27,7 @@ class Board:
         boards = [b.winner for b in self.boards]
         return three_in_a_row(boards)
 
-    def score(self, player, agent_id='agressive'):
+    def score(self, player, agent_id='default'):
         """
         Score a UTTT board position combining global winning potential with strategic control.
         Returns a value between 0 and 1, where:
@@ -89,6 +89,36 @@ class Board:
 
         # Clamp the score so that wins remain at 1.0 and the rest falls in [0, final_max_score]
         return max(0.0, min(final_max_score, final_score))
+
+    def __str__(self):
+        """
+        Render the Ultimate Tic-Tac-Toe board as a string.
+        This groups the 9 mini-boards into a 3x3 grid, where each mini-board
+        is itself a 3x3 grid.
+        """
+
+        def fmt(cell):
+            return cell if cell != "" else " "
+
+        output_lines = []
+        # There are 3 rows of mini-boards.
+        for big_row in range(3):
+            # Each mini-board is 3 rows high.
+            for inner_row in range(3):
+                row_parts = []
+                for big_col in range(3):
+                    mini_index = big_row * 3 + big_col
+                    mini_board = self.board.boards[mini_index]
+                    start = inner_row * 3
+                    end = start + 3
+                    # Render the current row of this mini-board.
+                    row_parts.append(" | ".join(fmt(cell) for cell in mini_board.cells[start:end]))
+                # Separate mini-boards horizontally with " || "
+                output_lines.append("  ||  ".join(row_parts))
+            # Add a horizontal separator between big rows.
+            if big_row < 2:
+                output_lines.append("-" * 33)
+        return "\n".join(output_lines)
 
 
 class Game:

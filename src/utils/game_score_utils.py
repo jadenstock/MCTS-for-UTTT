@@ -202,12 +202,12 @@ def test_board_scores(agent_id='default'):
     for desc, condition in tests:
         try:
             if condition(scores):
-                print(f"✓ {desc}")
+                print(f"PASSED - {desc}")
             else:
-                print(f"✗ {desc} FAILED")
+                print(f"FAILED - {desc}")
                 all_passed = False
         except Exception as e:
-            print(f"✗ {desc} FAILED with exception: {e}")
+            print(f"{desc} FAILED with exception: {e}")
             all_passed = False
     return all_passed
 
@@ -263,9 +263,9 @@ def test_square_importance(agent_id='default'):
             # The assertions lambda returns a flat list: alternating [condition, message, ...]
             for condition, message in zip(assertions[::2], assertions[1::2]):
                 assert condition, message
-            print("✓ Passed")
+            print("Passed")
         except AssertionError as e:
-            print(f"✗ Failed: {str(e)}")
+            print(f"Failed: {str(e)}")
 
 
 def validate_config(agent_id='default'):

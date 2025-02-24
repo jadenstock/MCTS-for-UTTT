@@ -1,14 +1,13 @@
 import time
 import math
+from utils.utils import load_agent_config
 
-DEFAULT_UCB_CONSTANT = 1.414
-DEFAULT_SECONDS_LIMIT = 20
-DEFAULT_NODE_LIMIT = 10000
-ROLLOUT_DEPTH = 4  # How many moves to look ahead in simulation
+DEFAULT_SECONDS_LIMIT = 30
+DEFAULT_NODE_LIMIT = 100000
 
 
 class SimulationTreeNode:
-    def __init__(self, game, player):
+    def __init__(self, game, player, agent_id='default'):
         self.game = game
         self.player = player
         self.number_of_plays = 1
@@ -16,6 +15,10 @@ class SimulationTreeNode:
         self.total_score = 0
         self.depth_seen = 1
         self.unseen_children = list(game.legal_moves())
+
+        config = load_agent_config(agent_id=agent_id)
+        self.ucb_constant = float(config.get("ucb_constant", 1.414))
+        self.rollout_depth = int(config.get("rollout_depth", 5))
 
     def get_score_of_move(self, m):
         if m not in self.children:
@@ -62,7 +65,7 @@ class SimulationTreeNode:
 
         # Run quick simulation
         depth = 0
-        while depth < ROLLOUT_DEPTH and not self.game.board.winner and self.game.legal_moves():
+        while depth < self.rollout_depth and not self.game.board.winner and self.game.legal_moves():
             greedy_move = self.game.greedy_next_move()
             if not greedy_move:
                 break
@@ -85,35 +88,38 @@ class SimulationTreeNode:
         for _ in range(len(moves_made)):
             self.game.undo_last_move()
 
-    def expand_tree_by_one(self, game_path=[], C=DEFAULT_UCB_CONSTANT):
+    def expand_tree_by_one(self, game_path=[]):
         if len(self.unseen_children) != 0:
             self.expand_one_child(game_path=game_path)
         else:
             if len(self.children) > 0:
-                m = self.get_best_action_by_ucb1(C)
+                m = self.get_best_action_by_ucb1(self.ucb_constant)
                 # Make move
                 self.game.make_move(m[0], m[1], self.game.next_to_move)
                 # Expand child
-                self.children[m].expand_tree_by_one(game_path=game_path + [self], C=C)
+                # TODO: Consider some sort of UCB constant schedule
+                self.children[m].expand_tree_by_one(game_path=game_path + [self])
                 # Undo move
                 self.game.undo_last_move()
 
 
-def evaluate_next_move(game, seconds_limit=DEFAULT_SECONDS_LIMIT, node_limit=DEFAULT_NODE_LIMIT,
-                       C=DEFAULT_UCB_CONSTANT, verbose=True, metadata=True):
+def evaluate_next_move(game,
+                       agent_id='default',
+                       seconds_limit=DEFAULT_SECONDS_LIMIT,
+                       node_limit=DEFAULT_NODE_LIMIT,
+                       verbose=True,
+                       metadata=True):
     """Main MCTS driver function with same interface as original."""
 
-    node = SimulationTreeNode(game, game.next_to_move)
+    node = SimulationTreeNode(game, game.next_to_move, agent_id=agent_id)
     start_time = time.time()
 
     # Main MCTS loop
     while (time.time() - start_time <= seconds_limit) and (node.number_of_plays < node_limit):
         # Dynamic UCB constant based on remaining time
         elapsed = time.time() - start_time
-        time_ratio = elapsed / seconds_limit
-        dynamic_C = C * (1.0 + (1.0 - time_ratio))
-
-        node.expand_tree_by_one(C=dynamic_C)
+        # time_ratio = elapsed / seconds_limit
+        node.expand_tree_by_one()
 
     best_move = node.get_best_action_by_average_score()
 
