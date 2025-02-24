@@ -1,4 +1,5 @@
 import tomllib as toml
+import functools
 
 LINES = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
@@ -31,7 +32,7 @@ def three_in_a_row(arr):
     return ""
 
 
-# Load configuration from a TOML file
+@functools.lru_cache(maxsize=None)
 def load_agent_config(agent_id="default"):
     with open("./src/etc/agents_config.toml", "rb") as f:
         config = toml.load(f)
