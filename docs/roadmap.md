@@ -1,137 +1,98 @@
 # Ultimate Tic-Tac-Toe Development Roadmap
 
-## Immediate Goals
+This roadmap outlines the key action items for improving the UTTT codebase, focusing on three critical areas: AI improvement through deep learning, MCTS performance optimization, and game state management.
 
-### Game Management Improvements
-- [ ] Enhanced game list dropdown
-  - [ ] Add game metadata (date created, last played)
-  - [ ] Display number of moves
-  - [ ] Show current game status (in progress, won, drawn)
-  - [ ] Add custom game naming
-- [ ] Game management UI
-  - [ ] Add ability to delete games
-  - [ ] Implement game renaming
-  - [ ] Add game filtering options (by status, date)
-  - [ ] Add confirmation dialogs for destructive actions
+## 1. Game AI Improvement with Deep Learning
 
-### MCTS Algorithm Enhancements
-- [ ] Implement informed rollout policies
-  - [ ] Add heuristic-guided move selection
-  - [ ] Prioritize tactical moves (wins, blocks)
-  - [ ] Weight moves based on strategic patterns
-  - [ ] Implement rollout policy caching
-- [ ] Progressive History integration
-  - [ ] Track global move success rates
-  - [ ] Implement history-based UCT weights
-  - [ ] Add decay factors for recent games
-  - [ ] Store common board patterns
-- [ ] Hybrid MCTS-Minimax implementation
-  - [ ] Add alpha-beta pruning for endgame positions
-  - [ ] Implement staged transition to exact solving
-  - [ ] Develop position complexity evaluation
-  - [ ] Cache solved sub-positions
+### Phase 1: Neural Network Foundation
+- [ ] Create neural network module (`src/models/neural_net.py`)
+- [ ] Design CNN architecture for board evaluation
+- [ ] Implement board state encoding/decoding for network input/output
+- [ ] Create initial model training pipeline
 
-### Performance Optimization
-- [ ] Reduce deep copy usage
-  - [ ] Implement state rollback instead of deep copying
-  - [ ] Add efficient board state caching
-  - [ ] Optimize memory usage in tree expansion
-- [ ] Profile and optimize core MCTS operations
-  - [ ] Benchmark current performance
-  - [ ] Identify bottlenecks in tree traversal
-  - [ ] Optimize node expansion strategy
-- [ ] Improve early stopping mechanism
-  - [ ] Implement variance-based confidence
-  - [ ] Add dynamic exploration constants
-  - [ ] Better handle endgame scenarios
+### Phase 2: Self-Play Data Generation
+- [ ] Enhance `self_play.py` to generate training data at scale
+- [ ] Implement efficient data storage format for game states and outcomes
+- [ ] Create data augmentation for board symmetries/rotations
+- [ ] Develop data collection pipeline that runs in background
 
-## Mid-term Goals
+### Phase 3: Neural Network Integration with MCTS
+- [ ] Modify `SimulationTreeNode` to use neural network evaluation
+- [ ] Replace heuristic scoring with neural network predictions
+- [ ] Implement hybrid approach combining neural network with UCB1
+- [ ] Add batch processing for neural network evaluations
 
-### Advanced Search Techniques
-- [ ] Implement RAVE (Rapid Action Value Estimation)
-  - [ ] Add AMAF (All Moves As First) statistics
-  - [ ] Implement RAVE parameter tuning
-  - [ ] Test hybrid RAVE-UCT selection
-- [ ] Position evaluation improvements
-  - [ ] Develop pattern-based evaluation
-  - [ ] Add strategic position scoring
-  - [ ] Implement threat detection
-- [ ] Search optimization
-  - [ ] Add principal variation move ordering
-  - [ ] Implement transposition tables
-  - [ ] Test parallel tree search
+### Phase 4: Progressive Training System
+- [ ] Create pipeline for iterative neural network improvement
+- [ ] Implement model versioning and evaluation
+- [ ] Develop automated training cycle (self-play → training → evaluation)
+- [ ] Add benchmarking against previous versions
 
-### Game Analysis Features
-- [ ] Move quality assessment
-  - [ ] Calculate move strength metrics
-  - [ ] Identify critical positions
-  - [ ] Highlight potential blunders
-- [ ] Game statistics tracking
-  - [ ] Track win rates and patterns
-  - [ ] Generate performance metrics
-  - [ ] Create player profiles
+## 2. MCTS Performance Optimization
 
-## Future Considerations
+### Phase 1: Parallelization Implementation
+- [ ] Implement Root Parallelization
+  - [ ] Create independent MCTS trees for each legal move
+  - [ ] Run trees in parallel and combine results
+  - [ ] Implement thread-safe result aggregation
+- [ ] Implement Leaf Parallelization
+  - [ ] Modify `expand_tree_by_one` to process multiple nodes in parallel
+  - [ ] Use Python's `concurrent.futures` or `multiprocessing`
+  - [ ] Implement thread-safe node updates for backpropagation
 
-### Advanced Features
-- [ ] AI difficulty levels
-  - [ ] Implement adjustable play strength
-  - [ ] Add personality-based play styles
-  - [ ] Create teaching mode
-- [ ] Multi-player support
-  - [ ] Local multiplayer
-  - [ ] Game sharing via URLs
-  - [ ] Optional move timer
-- [ ] Learning capabilities
-  - [ ] Add game database for learning
-  - [ ] Implement basic position learning
-  - [ ] Add pattern recognition training
+### Phase 2: Memory Optimization
+- [ ] Create memory-efficient game state representation
+- [ ] Implement bitboards or other compact representations
+- [ ] Reduce deep copy usage with state rollback mechanism
+- [ ] Add efficient board state caching
 
-### UI/UX Improvements
-- [ ] Enhanced visualizations
-  - [ ] Add move tree display
-  - [ ] Show AI confidence visualization
-  - [ ] Improve board highlighting
-- [ ] Accessibility improvements
-  - [ ] Add keyboard controls
-  - [ ] Improve screen reader support
-  - [ ] Add high contrast mode
+### Phase 3: Algorithm Enhancements
+- [ ] Implement early stopping with confidence bounds
+- [ ] Add dynamic exploration constant based on position
+- [ ] Optimize node selection and expansion strategy
+- [ ] Implement transposition tables for common positions
 
-## Known Issues
+## 3. Game State Management Improvements
 
-### Critical
-- [ ] Fix drawn game handling
-- [ ] Improve endgame search behavior
-- [ ] Handle interrupted computer moves
+### Phase 1: Move History and Backtracking
+- [ ] Enhance `GameStorage` class to store complete move history
+- [ ] Add `restore_to_move` method to revert to previous states
+- [ ] Implement transaction-like system for state consistency
+- [ ] Add UI controls to navigate through move history
 
-### Performance
-- [ ] Reduce memory usage during long games
-- [ ] Optimize state management
-- [ ] Improve loading times for game list
+### Phase 2: Error Handling and Validation
+- [ ] Add validation checks before and after state changes
+- [ ] Implement state verification system to detect inconsistencies
+- [ ] Add logging to track state changes and identify issues
+- [ ] Create automated tests for game state integrity
 
-### UI
-- [ ] Fix move placement during computer turns
-- [ ] Improve mobile responsiveness
-- [ ] Add better error messages
+### Phase 3: Game State Snapshots
+- [ ] Create system for regular game state snapshots
+- [ ] Allow restoring from snapshots if corruption is detected
+- [ ] Implement efficient diff-based storage for snapshots
+- [ ] Add UI for snapshot management
 
-## Technical Debt
-- [ ] Add comprehensive test suite
-- [ ] Improve code documentation
-- [ ] Refactor state management
-- [ ] Clean up deprecated features
+## Implementation Priority
 
+1. **Game State Management Improvements**
+   - Focus on fixing the immediate issues with game saving and state management
+   - Implement move history and backtracking first to address the inability to undo moves
+   - Add validation to prevent buggy states
 
-# Next steps
-# add a 'go back' button to UI and have it impact the save state (makes end game testing work nice)
-# show the game name in UI
-# fix bug where winner isn't caluclated at end of game
+2. **MCTS Performance Optimization**
+   - Implement Root Parallelization as a quick win for performance
+   - Optimize memory usage to allow deeper search
+   - Add algorithm enhancements to improve search efficiency
 
-# display on screen what computer thinks my next move will be (or top 3)
-  # for debuggability
+3. **Game AI Improvement with Deep Learning**
+   - Begin with self-play data generation to build training dataset
+   - Develop neural network architecture and training pipeline
+   - Integrate with MCTS for improved evaluation
+   - Implement progressive training system
 
-# find back-end improvements for efficiency
-# Create config of most important params, create a tournament to test them
-  # requires some sort of self play mechanism, Can happen entirly on backend but using the flask to make moves?
+## Known Issues to Address
 
-
-# Major bug, I can place on a board thats been won and the computer coutner moves. Issues in front end and back end?
+- [ ] Fix bug where winner isn't calculated correctly at end of game
+- [ ] Fix bug where player can place on a board that's been won
+- [ ] Address memory usage issues during long games
+- [ ] Improve handling of interrupted computer moves
