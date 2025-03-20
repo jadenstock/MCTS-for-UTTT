@@ -199,6 +199,118 @@ button:active {
   z-index: 1;
 }
 
+/* Game History Controls */
+.history-controls {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.move-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.computer-move-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+#trigger-computer-move-btn {
+  background-color: #e53e3e;
+}
+
+#trigger-computer-move-btn:hover {
+  background-color: #c53030;
+}
+
+#trigger-computer-move-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#turn-indicator {
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  background: #e2e8f0;
+  border-radius: 4px;
+  min-width: 150px;
+  text-align: center;
+}
+
+.move-navigation button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.move-navigation button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#current-move-display {
+  font-weight: bold;
+  padding: 0.5rem;
+  background: #e2e8f0;
+  border-radius: 4px;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Snapshot Controls */
+.snapshot-controls {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.snapshot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#snapshot-name {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  flex-grow: 1;
+  min-width: 150px;
+}
+
+#snapshots-select {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+#create-snapshot-btn, #restore-snapshot-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
 .button-container {
   display: flex;
   gap: 1rem;

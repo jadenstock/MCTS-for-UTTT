@@ -38,6 +38,36 @@
         </div>
         <h2 id="last-move" data-last-board="-1" data-last-cell="-1"></h2>
         <h2 id="winner" data-winner=""></h2>
+        
+        <!-- Game History Controls -->
+        <div class="history-controls">
+            <h3>Move History</h3>
+            <div class="move-navigation">
+                <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First Move</button>
+                <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Previous</button>
+                <span id="current-move-display">Move: 0/0</span>
+                <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
+                <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Last Move</button>
+            </div>
+            <div class="computer-move-control">
+                <button id="trigger-computer-move-btn" onclick="game.triggerComputerMove()">Trigger Computer Move</button>
+                <span id="turn-indicator"></span>
+            </div>
+        </div>
+        
+        <!-- Snapshot Controls -->
+        <div class="snapshot-controls">
+            <h3>Game Snapshots</h3>
+            <div class="snapshot-actions">
+                <input type="text" id="snapshot-name" placeholder="Snapshot Label">
+                <button id="create-snapshot-btn" onclick="game.uiManager.createSnapshot()">Create Snapshot</button>
+                <select id="snapshots-select">
+                    <option value="">Select a snapshot...</option>
+                </select>
+                <button id="restore-snapshot-btn" onclick="game.uiManager.restoreSelectedSnapshot()">Restore Snapshot</button>
+            </div>
+        </div>
+        
         <div class="button-container">
             <div class="game-name-container">
                 <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">

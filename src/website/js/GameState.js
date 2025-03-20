@@ -1,6 +1,6 @@
 class GameState {
     constructor() {
-        this.gameId = crypto.randomUUID();  // Add just this one line
+        this.gameId = crypto.randomUUID();
         this.board = [
             ["", "", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", "", ""],
@@ -13,10 +13,13 @@ class GameState {
             ["", "", "", "", "", "", "", "", ""]
         ];
         this.moveNumber = 1;
+        this.totalMoves = 0;  // Track total moves for history navigation
+        this.moves = [];      // Store move history
         this.isComputerThinking = false;
         this.winner = null;
         this.boardFull = false;
         this.targetBoard = -1;  // -1 means can play anywhere
+        this.next_to_move = GAME_CONSTANTS.PLAYERS.HUMAN;  // Human goes first by default
     }
 
     makeMove(board, cell, player) {
@@ -50,6 +53,28 @@ class GameState {
         console.log('Move accepted');
         this.board[board][cell] = player;
         this.moveNumber++;
+        this.totalMoves = this.moveNumber - 1;  // Update total moves
+        
+        // Add move to history
+        if (this.moves.length >= this.totalMoves) {
+            // If we're not at the end of history (e.g., after navigating back),
+            // truncate the move history to current position
+            this.moves = this.moves.slice(0, this.moveNumber - 2);
+        }
+        
+        // Add the new move to history
+        this.moves.push({
+            board: board,
+            cell: cell,
+            player: player,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Update next player to move
+        this.next_to_move = player === GAME_CONSTANTS.PLAYERS.HUMAN ? 
+            GAME_CONSTANTS.PLAYERS.COMPUTER : GAME_CONSTANTS.PLAYERS.HUMAN;
+        console.log("Next to move updated to:", this.next_to_move);
+            
         this.targetBoard = cell;
         this.checkBoardStatus();
         return true;
@@ -101,9 +126,12 @@ class GameState {
         this.gameId = crypto.randomUUID();
         this.board = Array(9).fill().map(() => Array(9).fill(""));
         this.moveNumber = 1;
+        this.totalMoves = 0;
+        this.moves = [];
         this.isComputerThinking = false;
         this.winner = null;
         this.boardFull = false;
         this.targetBoard = -1;
+        this.next_to_move = GAME_CONSTANTS.PLAYERS.HUMAN;  // Reset to human's turn
     }
 }
