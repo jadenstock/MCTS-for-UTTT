@@ -40,9 +40,8 @@ def make_move():
     # Get computer's move
     m = evaluate_next_move(g, seconds_limit=int(data["compute_time"]), verbose=False)
 
-    # Apply computer's move and record it as the last move
+    # Apply computer's move
     g.make_move(m[0], m[1], g.next_to_move)
-    g.move_stack.append((m[0], m[1], 'o'))  # Explicitly set last_move to computer's move
 
     # Save after computer's move
     if game_id:

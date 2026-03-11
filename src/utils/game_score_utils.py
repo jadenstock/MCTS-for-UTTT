@@ -1,10 +1,21 @@
 from utils.utils import LINES, load_agent_config
 
+
+def _normalize_token(token):
+    return token.lower() if isinstance(token, str) else token
+
+
+def _normalize_board(board):
+    return [_normalize_token(cell) for cell in board]
+
+
 def score_board(board, player, agent_id='default'):
     """
     Score a tic-tac-toe board from a player's perspective using parameters from the config.
     """
-    opponent = 'O' if player == 'X' else 'X'
+    board = _normalize_board(board)
+    player = _normalize_token(player)
+    opponent = 'o' if player == 'x' else 'x'
     config = load_agent_config(agent_id=agent_id)
 
     # Extract scoring parameters from config (with defaults)
@@ -56,6 +67,7 @@ def calculate_square_importance(board, agent_id='default'):
     Importance is relative to the number of remaining viable winning paths.
     Uses config values for weighting different line progress states.
     """
+    board = _normalize_board(board)
     config = load_agent_config(agent_id=agent_id)
     # Extract importance weights from config (or use defaults)
     importance_win_weight = float(config.get("importance_win_weight", 2.0))
@@ -63,7 +75,7 @@ def calculate_square_importance(board, agent_id='default'):
     importance_fresh_weight = float(config.get("importance_fresh_weight", 0.1))
 
     def count_viable_paths(player):
-        opponent = 'O' if player == 'X' else 'X'
+        opponent = 'o' if player == 'x' else 'x'
         viable_paths = 0
         for line in LINES:
             cells = [board[i] for i in line]
@@ -71,42 +83,50 @@ def calculate_square_importance(board, agent_id='default'):
                 viable_paths += 1
         return viable_paths
 
-    def calculate_line_importance(cells, player):
-        player_count = cells.count(player)
-        opponent = 'O' if player == 'X' else 'X'
-        opponent_count = cells.count(opponent)
-
-        # If the line is blocked, it has no importance.
-        if opponent_count > 0:
-            return 0.0
-
-        total_viable_paths = count_viable_paths(player)
-        if total_viable_paths == 0:
-            return 0.0
-
-        if player_count == 2:
-            return min(1.0, importance_win_weight / total_viable_paths)
-        elif player_count == 1:
-            return importance_develop_weight * (1.0 / total_viable_paths)
-        else:
-            return importance_fresh_weight * (1.0 / total_viable_paths)
-
     importance_x = [0.0] * 9
     importance_o = [0.0] * 9
+
+    viable_x = count_viable_paths('x')
+    viable_o = count_viable_paths('o')
 
     for line in LINES:
         cells = [board[i] for i in line]
         empty_indices = [i for i in line if board[i] == '']
 
         # If someone has already won on this line, return zeros.
-        if cells.count('X') == 3 or cells.count('O') == 3:
+        if cells.count('x') == 3 or cells.count('o') == 3:
             return [0.0] * 9, [0.0] * 9
 
         if not empty_indices:
             continue
 
-        imp_x_line = calculate_line_importance(cells, 'X')
-        imp_o_line = calculate_line_importance(cells, 'O')
+        if viable_x == 0:
+            imp_x_line = 0.0
+        else:
+            x_count = cells.count('x')
+            o_count = cells.count('o')
+            if o_count > 0:
+                imp_x_line = 0.0
+            elif x_count == 2:
+                imp_x_line = min(1.0, importance_win_weight / viable_x)
+            elif x_count == 1:
+                imp_x_line = importance_develop_weight / viable_x
+            else:
+                imp_x_line = importance_fresh_weight / viable_x
+
+        if viable_o == 0:
+            imp_o_line = 0.0
+        else:
+            x_count = cells.count('x')
+            o_count = cells.count('o')
+            if x_count > 0:
+                imp_o_line = 0.0
+            elif o_count == 2:
+                imp_o_line = min(1.0, importance_win_weight / viable_o)
+            elif o_count == 1:
+                imp_o_line = importance_develop_weight / viable_o
+            else:
+                imp_o_line = importance_fresh_weight / viable_o
 
         for idx in empty_indices:
             importance_x[idx] += imp_x_line

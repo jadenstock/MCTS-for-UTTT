@@ -13,7 +13,7 @@ class GameStorage:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-    def save_game(self, game_id: str, game_state: Dict[str, Any], move_metadata: Optional[Dict] = None) -> None:
+    def save_game(self, game_id: str, game_state: Game, move_metadata: Optional[Dict] = None) -> None:
         """Save game state and optional move metadata with enhanced tracking"""
         path = self.data_dir / f"{game_id}.json"
 
@@ -29,20 +29,22 @@ class GameStorage:
                 "snapshots": []
             }
 
-        # Add current move to history with timestamp
-        game_data["moves"].append({
-            "move_number": len(game_data["moves"]) + 1,
-            "board": game_state.move_stack[-1][0],
-            "cell": game_state.move_stack[-1][1],
-            "player": game_state.move_stack[-1][2],
-            "timestamp": datetime.now().isoformat(),
-            "metadata": move_metadata if move_metadata else None
-        })
+        # Add current move to history with timestamp if one exists.
+        last_move = game_state.move_stack[-1] if game_state.move_stack else None
+        if last_move is not None:
+            game_data["moves"].append({
+                "move_number": len(game_data["moves"]) + 1,
+                "board": last_move[0],
+                "cell": last_move[1],
+                "player": last_move[2],
+                "timestamp": datetime.now().isoformat(),
+                "metadata": move_metadata if move_metadata else None
+            })
 
         # Update current state
         game_data["current_state"] = {
             "board": [b.cells for b in game_state.board.boards],
-            "last_move": game_state.move_stack[-1],
+            "last_move": last_move,
             "next_to_move": game_state.next_to_move,
             "winner": game_state.board.winner
         }

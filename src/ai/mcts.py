@@ -10,6 +10,7 @@ class SimulationTreeNode:
     def __init__(self, game, player, agent_id='default'):
         self.game = game
         self.player = player
+        self.agent_id = agent_id
         self.number_of_plays = 1
         self.children = {}
         self.total_score = 0
@@ -48,7 +49,9 @@ class SimulationTreeNode:
                 action = m
         return action
 
-    def expand_one_child(self, game_path=[]):
+    def expand_one_child(self, game_path=None):
+        if game_path is None:
+            game_path = []
         if len(self.unseen_children) == 0:
             return
 
@@ -61,7 +64,7 @@ class SimulationTreeNode:
         moves_made.append(m)
 
         # Create child node
-        self.children[m] = SimulationTreeNode(self.game, self.player)
+        self.children[m] = SimulationTreeNode(self.game, self.player, agent_id=self.agent_id)
 
         # Run quick simulation
         depth = 0
@@ -88,7 +91,9 @@ class SimulationTreeNode:
         for _ in range(len(moves_made)):
             self.game.undo_last_move()
 
-    def expand_tree_by_one(self, game_path=[]):
+    def expand_tree_by_one(self, game_path=None):
+        if game_path is None:
+            game_path = []
         if len(self.unseen_children) != 0:
             self.expand_one_child(game_path=game_path)
         else:

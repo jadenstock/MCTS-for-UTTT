@@ -108,7 +108,7 @@ class Board:
                 row_parts = []
                 for big_col in range(3):
                     mini_index = big_row * 3 + big_col
-                    mini_board = self.board.boards[mini_index]
+                    mini_board = self.boards[mini_index]
                     start = inner_row * 3
                     end = start + 3
                     # Render the current row of this mini-board.
@@ -178,10 +178,11 @@ class Game:
         best_move = None
         best_move_score = -float("inf")
         for m in self.legal_moves():
+            player = self.next_to_move
             # Make the move directly on our current state
-            self.make_move(m[0], m[1], self.next_to_move)
+            self.make_move(m[0], m[1], player)
             # Evaluate score
-            s = self.board.score(self.next_to_move)
+            s = self.board.score(player)
             # Undo the move to restore previous state
             self.undo_last_move()
 
@@ -228,8 +229,11 @@ class Game:
 def make_game(game_board, move_stack):
     """Create a game instance from a board state and last move"""
     g = Game()
-    g.move_stack = move_stack
-    g.next_to_move = "x" if move_stack[-1][2].lower() == "o" else "o"
+    g.move_stack = list(move_stack)
+    if g.move_stack:
+        g.next_to_move = "x" if g.move_stack[-1][2].lower() == "o" else "o"
+    else:
+        g.next_to_move = "x"
     for i, b in enumerate(g.board.boards):
         b.cells = [l.lower() for l in game_board[i]]
         b.winner = b.evaluate_winner()

@@ -31,11 +31,11 @@ class Game {
         console.log("- Move number:", this.gameState.moveNumber);
         console.log("- Total moves:", this.gameState.totalMoves);
         console.log("- Target board:", this.gameState.targetBoard);
-        
-        // Force next_to_move to be HUMAN if we're making a move after navigation
+
+        // Only allow human interaction on human turns.
         if (this.gameState.next_to_move !== GAME_CONSTANTS.PLAYERS.HUMAN) {
-            console.log("Forcing next_to_move to HUMAN");
-            this.gameState.next_to_move = GAME_CONSTANTS.PLAYERS.HUMAN;
+            console.log("Move rejected: Not human turn");
+            return;
         }
 
         // Make the move if valid
@@ -89,23 +89,17 @@ class Game {
                 const computerCell = data.cell;
                 
                 console.log("Computer move from server:", computerBoard, computerCell);
-                
-                // Update the game state with the computer's move
-                this.gameState.board[computerBoard][computerCell] = GAME_CONSTANTS.PLAYERS.COMPUTER;
-                this.gameState.targetBoard = computerCell;
-                this.gameState.moveNumber++;
-                this.gameState.totalMoves = this.gameState.moveNumber - 1;
-                
-                // Add the move to history
-                this.gameState.moves.push({
-                    board: computerBoard,
-                    cell: computerCell,
-                    player: GAME_CONSTANTS.PLAYERS.COMPUTER,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Update next_to_move to be the player's turn again
-                this.gameState.next_to_move = GAME_CONSTANTS.PLAYERS.HUMAN;
+
+                // Apply computer move through the same state transition path.
+                const computerMoveSuccess = this.gameState.makeMove(
+                    computerBoard,
+                    computerCell,
+                    GAME_CONSTANTS.PLAYERS.COMPUTER
+                );
+                if (!computerMoveSuccess) {
+                    console.error("Failed to apply computer move to local state");
+                    return;
+                }
                 console.log("Next to move after computer move:", this.gameState.next_to_move);
                 
                 // Update UI after computer move

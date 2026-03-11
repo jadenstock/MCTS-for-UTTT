@@ -39,14 +39,14 @@ def run_self_play(agent1, agent2, compute_time):
         print(f"Chosen move: Board {board_idx}, Cell {cell_idx}")
 
         # Make the move on the game.
-        if not game.make_move(board_idx, cell_idx, game.next_to_move):
+        player = game.next_to_move
+        if not game.make_move(board_idx, cell_idx, player):
             print("Encountered an illegal move; terminating simulation.")
             break
 
-        # Append move to the game stack and log.
-        game.move_stack.append((board_idx, cell_idx, game.next_to_move))
+        # Log move after successful application.
         moves_log.append({
-            "player": game.next_to_move,
+            "player": player,
             "move": {"board": board_idx, "cell": cell_idx},
             "metadata": metadata
         })

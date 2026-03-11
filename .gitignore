@@ -44,3 +44,6 @@ htmlcov/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Local planning docs (Codex)
+local_docs/
