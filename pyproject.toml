@@ -7,4 +7,5 @@ dependencies = [
     "flask-cors>=5.0.0",
     "flask>=3.1.0",
     "invoke>=2.2.0",
+    "tomli>=2.0.1; python_version < '3.11'",
 ]

@@ -1,5 +1,8 @@
-import tomllib as toml
 import functools
+try:
+    import tomllib as toml  # Python 3.11+
+except ModuleNotFoundError:
+    import tomli as toml  # Python 3.10 fallback
 
 LINES = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
