@@ -1,153 +1,141 @@
-# Ultimate Tic-Tac-Toe with MCTS AI
+# Ultimate Tic-Tac-Toe MCTS Bot
 
-A sophisticated implementation of Ultimate Tic-Tac-Toe featuring a Monte Carlo Tree Search (MCTS) AI player, persistent game storage, and an interactive web interface.
+Ultimate Tic-Tac-Toe with a Flask backend, a browser UI, persistent game storage, and a Monte Carlo Tree Search (MCTS) agent with configurable heuristics.
 
-## Features
+## Current Status
 
-- 🎮 Full Ultimate Tic-Tac-Toe gameplay
-- 🤖 Advanced MCTS-based AI opponent
-- 💾 Game persistence with save/load functionality
-- 📊 Real-time AI analysis and move statistics
-- ⚙️ Configurable AI computation time
-- 🌐 Clean, responsive web interface
+Recent revamp work on `codex-revamp` includes:
+- Backend-authoritative move flow (`/api/makemove/`) to reduce state drift.
+- Core state codec module for shared serialization/reconstruction logic.
+- Expanded regression test suite for engine/storage/MCTS service paths.
+- Reproducible benchmark harness for agent-vs-agent evaluation.
+- Frontend networking decoupled via `ApiClient`.
+- Full UI refresh with responsive dashboard layout.
 
-## Quick Start
+## Requirements
 
-### Prerequisites
-- Python 3.8+
-- Node.js 14+ (for frontend development)
-- Modern web browser
+- Python `>=3.10,<3.13`
+- `uv` (recommended) or pip
+- Modern browser
 
-### Installation
+Notes:
+- Python 3.10 is supported with `tomli` fallback for TOML parsing.
+- Frontend is vanilla JS/CSS/HTML (no Node build step required).
 
-1. Clone the repository:
+## Setup
+
 ```bash
-git clone https://github.com/yourusername/ultimate-tictactoe.git
-cd ultimate-tictactoe
-```
-
-2. Set up development environment:
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Create and activate virtual environment
+cd /home/jaden/MCTS-for-UTTT
 uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
+source .venv/bin/activate
 uv sync
 ```
 
-### Running the Game
+## Run Locally
 
-1. Start the backend server:
+Start backend:
+
 ```bash
-invoke run-server
-# Or specify a custom port:
-invoke run-server --port 8000
+invoke run-server --port 5000
 ```
 
-2. Open `index.html` in your web browser
+Open the UI:
+- `src/website/index.html`
 
-## Game Rules
+The frontend expects the API at `http://127.0.0.1:5000` (see `src/website/js/constants.js`).
 
-Ultimate Tic-Tac-Toe is played on nine small tic-tac-toe boards arranged in a 3×3 grid. To win, you must win three small boards in a row. The twist: your opponent's move determines which board you must play in next.
+## Test Suite
 
-For detailed rules, see the [Wikipedia page](https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe).
+Run all tests:
 
-## Technical Implementation
-
-### Frontend Architecture
-- Vanilla JavaScript with component-based structure
-- Real-time game state management
-- Responsive UI with move highlighting
-- Game persistence interface
-
-Key components:
-- `GameState`: Core game logic
-- `UIManager`: DOM and rendering
-- `ComputerPlayer`: AI interface
-
-### Backend Architecture
-- Flask-based RESTful API
-- MCTS AI implementation
-- Persistent game storage
-- Move analysis system
-
-### AI Implementation
-
-The AI uses Monte Carlo Tree Search with several enhancements:
-- UCB1 for node selection
-- Russell-Norvig scoring function
-- Adaptive computation time
-- Early stopping optimization
-- Move confidence metrics
-
-#### AI Performance
-The AI performs well against:
-- Beginner to intermediate players
-- Tactical play styles
-- Time-pressured situations
-
-For optimal AI performance:
-- Use 15-20 seconds computation time
-- Enable "Force full thinking time" for critical positions
-- Review move metadata for insights
-
-## API Endpoints
-
-### Make Move
-```http
-POST /api/makemove/
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-### List Games
-```http
-GET /api/games
+What is currently covered:
+- Core game invariants (`make_move`, `undo`, board formatting, empty-state creation)
+- MCTS behavior checks (agent config propagation)
+- Scoring/token normalization behavior
+- Storage save/restore invariants
+- Move service authority checks
+- State codec serialization/replay behavior
+- Benchmark reproducibility logic
+
+Note: API tests that import Flask are auto-skipped if Flask is unavailable in the active environment.
+
+## Benchmarking Agents
+
+Reproducible self-play benchmark task:
+
+```bash
+invoke benchmark --agent-a default --agent-b aggressive --games 20 --node-limit 750 --opening-random-plies 2 --seed 42
 ```
 
-### Load Game
-```http
-GET /api/games/{game_id}
+Equivalent CLI:
+
+```bash
+PYTHONPATH=src python -m core.benchmark \
+  --agent-a default \
+  --agent-b aggressive \
+  --games 20 \
+  --compute-time 60 \
+  --node-limit 750 \
+  --opening-random-plies 2 \
+  --seed 42
 ```
 
-## Development
+Why `node-limit` is used in benchmark mode:
+- It reduces wall-clock jitter when comparing two agent versions.
+- Gameplay can still use time-based thinking budgets in the UI.
 
-### Project Structure
+## Project Structure
+
+```text
+MCTS-for-UTTT/
+├── src/
+│   ├── ai/
+│   │   └── mcts.py
+│   ├── core/
+│   │   ├── benchmark.py
+│   │   ├── game.py
+│   │   ├── move_service.py
+│   │   ├── self_play.py
+│   │   └── state_codec.py
+│   ├── utils/
+│   │   ├── game_score_utils.py
+│   │   ├── game_storage.py
+│   │   └── utils.py
+│   ├── website/
+│   │   ├── css/styles.css
+│   │   ├── index.html
+│   │   └── js/
+│   │       ├── ApiClient.js
+│   │       ├── ComputerPlayer.js
+│   │       ├── Game.js
+│   │       ├── GameState.js
+│   │       └── UIManager.js
+│   └── flask_server.py
+├── tests/
+├── docs/
+└── tasks.py
 ```
-/ultimate-tictactoe
-├── frontend/           # Web interface
-│   ├── js/            # JavaScript components
-│   └── css/           # Styling
-├── src/               # Backend
-│   ├── core/          # Game engine
-│   ├── ai/            # MCTS implementation
-│   └── utils/         # Utilities
-└── docs/              # Documentation
-```
 
-### Documentation
-- [Frontend Documentation](docs/Frontend.md)
-- [Backend Documentation](docs/Backend.md)
-- [API Documentation](docs/API.md)
+## API Overview
 
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+- `POST /api/makemove/`
+- `GET /api/games`
+- `GET /api/games/{game_id}`
+- `POST /api/games/rename/{game_id}`
+- `POST /api/games/{game_id}/restore/{move_number}`
+- `GET /api/games/{game_id}/snapshots`
+- `POST /api/games/{game_id}/snapshots`
+- `POST /api/games/{game_id}/snapshots/{snapshot_id}/restore`
 
-## Roadmap
+See [API.md](docs/API.md) for endpoint payload details.
 
-See our [detailed roadmap](ROADMAP.md) for planned features and improvements.
+## Near-Term Roadmap
 
-## Known Issues
-
-- Game state issues in drawn games
-- End-game AI search depth concerns
-
-## Acknowledgments
-
-- MCTS implementation inspired by the survey paper: "A Survey of Monte Carlo Tree Search Methods"
-- Board evaluation based on Russell-Norvig's game theory principles
+1. Improve benchmark depth and reporting (per-agent score summary, confidence intervals).
+2. Add stronger API integration coverage in CI-like local workflow.
+3. Begin neural-net data pipeline scaffolding (state encoder + dataset writer).
+4. Integrate learned policy/value in hybrid MCTS mode.
