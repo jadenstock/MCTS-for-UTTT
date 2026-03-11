@@ -3,28 +3,12 @@ import flask_cors
 import json
 import argparse
 
-from core.game import make_game
 from ai.mcts import evaluate_next_move
+from core.move_service import apply_human_and_ai_move
 from utils.game_storage import GameStorage
 
 app = Flask(__name__)
 storage = GameStorage()
-
-
-def _load_game_for_mutation(game_id):
-    """Load an existing game into a mutable Game instance."""
-    if not game_id:
-        return None, None
-
-    game_data = storage.load_game(game_id)
-    if not game_data:
-        return None, None
-
-    current_state = game_data.get("current_state", {})
-    board = current_state.get("board")
-    last_move = current_state.get("last_move")
-    move_stack = [tuple(last_move)] if last_move else []
-    return make_game(board, move_stack), game_data
 
 
 @app.route('/api/makemove/', methods=['POST', 'OPTIONS'])
@@ -41,72 +25,19 @@ def make_move():
     except Exception as e:
         return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
         
-    game_id = data.get("game_id")
-    last_move = data.get("last_move")
-    if not last_move or len(last_move) != 3:
-        return jsonify({"error": "Missing or invalid last_move"}), 400
-
-    human_board = int(last_move[0])
-    human_cell = int(last_move[1])
-    human_player = str(last_move[2]).lower()
-
-    # Load existing state when possible; fallback to a new game.
-    g, existing_data = _load_game_for_mutation(game_id)
-    if g is None:
-        # New game: trust the move intent, not client board authority.
-        from core.game import Game
-        g = Game()
-        existing_data = None
-
-    # Apply the human move on authoritative server state.
-    if not g.make_move(human_board, human_cell, human_player):
-        return jsonify({"error": "Illegal human move for current game state"}), 400
-
-    # Save human move if we have a game_id
-    if game_id:
-        storage.save_game(game_id, g, None)
-
-    # If the human move ended the game, return authoritative final state.
-    if g.board.winner or not g.legal_moves():
-        response = {
-            "board": None,
-            "cell": None,
-            "metadata": None,
-            "current_state": {
-                "board": [b.cells for b in g.board.boards],
-                "last_move": g.move_stack[-1] if g.move_stack else None,
-                "next_to_move": g.next_to_move,
-                "winner": g.board.winner
-            },
-            "move_count": len(existing_data["moves"]) + 1 if (game_id and existing_data) else len(g.move_stack)
-        }
-        return jsonify(response)
-
-    # Get computer's move
-    m = evaluate_next_move(g, seconds_limit=int(data["compute_time"]), verbose=False)
-
-    # Apply computer's move
-    if not g.make_move(m[0], m[1], g.next_to_move):
-        return jsonify({"error": "Failed to apply computed computer move"}), 500
-
-    # Save after computer's move
-    if game_id:
-        storage.save_game(game_id, g, m[2])
-
-    prior_moves = len(existing_data["moves"]) if (game_id and existing_data) else 0
-    res = {
-        "board": m[0],
-        "cell": m[1],
-        "metadata": m[2],
-        "current_state": {
-            "board": [b.cells for b in g.board.boards],
-            "last_move": g.move_stack[-1] if g.move_stack else None,
-            "next_to_move": g.next_to_move,
-            "winner": g.board.winner
-        },
-        "move_count": prior_moves + 2
-    }
-    return jsonify(res)
+    try:
+        response_data = apply_human_and_ai_move(
+            storage=storage,
+            game_id=data.get("game_id"),
+            human_move=data.get("last_move"),
+            compute_time=data.get("compute_time", 5),
+            evaluate_fn=evaluate_next_move,
+        )
+        return jsonify(response_data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/games', methods=['GET'])
