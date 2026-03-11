@@ -1,8 +1,9 @@
 class Game {
     constructor() {
         this.gameState = new GameState();
-        this.uiManager = new UIManager(this.gameState);
-        this.computerPlayer = new ComputerPlayer(this.gameState, this.uiManager);
+        this.apiClient = new ApiClient(GAME_CONSTANTS.API_ENDPOINTS);
+        this.uiManager = new UIManager(this.gameState, this.apiClient);
+        this.computerPlayer = new ComputerPlayer(this.gameState, this.uiManager, this.apiClient);
         this.initialize();
     }
 
@@ -68,23 +69,15 @@ class Game {
                     compute_time: document.getElementById("computeTime").value
                 });
                 
-                const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.MAKE_MOVE, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        game_id: this.gameState.gameId,
-                        game_board: this.gameState.board,
-                        last_move: [board, cell, GAME_CONSTANTS.PLAYERS.HUMAN],
-                        compute_time: document.getElementById("computeTime").value
-                    })
+                const { ok, data } = await this.apiClient.requestComputerTurn({
+                    game_id: this.gameState.gameId,
+                    game_board: this.gameState.board,
+                    last_move: [board, cell, GAME_CONSTANTS.PLAYERS.HUMAN],
+                    compute_time: document.getElementById("computeTime").value
                 });
-                
-                const data = await response.json();
                 console.log("Server response:", data);
 
-                if (!response.ok) {
+                if (!ok) {
                     console.error("Server rejected move:", data.error || data);
                     return;
                 }
@@ -188,23 +181,14 @@ class Game {
         }
 
         // Call the API to update the name
-        fetch(GAME_CONSTANTS.API_ENDPOINTS.UPDATE_GAME_NAME(this.gameState.gameId), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name: newName
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+        this.apiClient.renameGame(this.gameState.gameId, newName)
+        .then(({ ok, data }) => {
+            if (ok && data.success) {
                 this.uiManager.updateGameName(newName);
                 this.uiManager.updateSavedGamesDropdown();
-            } else {
-                alert('Failed to update game name');
+                return;
             }
+            alert(data.error || 'Failed to update game name');
         })
         .catch(error => {
             console.error('Error updating game name:', error);

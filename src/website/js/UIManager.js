@@ -1,6 +1,7 @@
 class UIManager {
-    constructor(gameState) {
+    constructor(gameState, apiClient) {
         this.gameState = gameState;
+        this.apiClient = apiClient;
         this.initializeElements();
 
         // Add debug log
@@ -53,10 +54,12 @@ class UIManager {
     async updateSavedGamesDropdown() {
         console.log("Attempting to update saved games dropdown");
         try {
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.LIST_GAMES);
-            console.log("API response received:", response);
-            const games = await response.json();
+            const { ok, data: games } = await this.apiClient.listGames();
+            console.log("API response received:", ok);
             console.log("Games data:", games);
+            if (!ok) {
+                throw new Error(games.error || "Failed to list games");
+            }
 
             if (!this.savedGamesSelect) {
                 console.error("savedGamesSelect element not found!");
@@ -88,8 +91,10 @@ class UIManager {
 
     async loadGame(gameId) {
         try {
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.LOAD_GAME(gameId));
-            const gameData = await response.json();
+            const { ok, data: gameData } = await this.apiClient.loadGame(gameId);
+            if (!ok) {
+                throw new Error(gameData.error || "Failed to load game");
+            }
 
             // Update the game state
             this.gameState.board = gameData.current_state.board;
@@ -397,11 +402,10 @@ class UIManager {
         
         try {
             this.showThinkingMessage();
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.RESTORE_TO_MOVE(this.gameState.gameId, moveNumber), {
-                method: 'POST'
-            });
-            
-            const data = await response.json();
+            const { ok, data } = await this.apiClient.restoreToMove(this.gameState.gameId, moveNumber);
+            if (!ok) {
+                throw new Error(data.error || "Failed to restore move");
+            }
             if (data.success) {
                 // Update game state with restored data
                 const gameData = data.game;
@@ -499,8 +503,10 @@ class UIManager {
         }
         
         try {
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.LIST_SNAPSHOTS(this.gameState.gameId));
-            const snapshots = await response.json();
+            const { ok, data: snapshots } = await this.apiClient.listSnapshots(this.gameState.gameId);
+            if (!ok) {
+                throw new Error(snapshots.error || "Failed to list snapshots");
+            }
             
             // Clear existing options except the first placeholder
             this.snapshotsSelect.innerHTML = '<option value="">Select a snapshot...</option>';
@@ -527,15 +533,10 @@ class UIManager {
         
         try {
             this.showThinkingMessage();
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.CREATE_SNAPSHOT(this.gameState.gameId), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ label })
-            });
-            
-            const data = await response.json();
+            const { ok, data } = await this.apiClient.createSnapshot(this.gameState.gameId, label);
+            if (!ok) {
+                throw new Error(data.error || "Failed to create snapshot");
+            }
             if (data.success) {
                 alert('Snapshot created successfully');
                 this.snapshotNameInput.value = ''; // Clear the input
@@ -565,11 +566,10 @@ class UIManager {
         
         try {
             this.showThinkingMessage();
-            const response = await fetch(GAME_CONSTANTS.API_ENDPOINTS.RESTORE_SNAPSHOT(this.gameState.gameId, snapshotId), {
-                method: 'POST'
-            });
-            
-            const data = await response.json();
+            const { ok, data } = await this.apiClient.restoreSnapshot(this.gameState.gameId, snapshotId);
+            if (!ok) {
+                throw new Error(data.error || "Failed to restore snapshot");
+            }
             if (data.success) {
                 // Update game state with restored data
                 const gameData = data.game;

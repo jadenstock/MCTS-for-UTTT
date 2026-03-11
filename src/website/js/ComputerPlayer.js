@@ -1,7 +1,8 @@
 class ComputerPlayer {
-    constructor(gameState, uiManager) {
+    constructor(gameState, uiManager, apiClient) {
         this.gameState = gameState;
         this.uiManager = uiManager;
+        this.apiClient = apiClient;
     }
 
     async makeMove() {
@@ -11,8 +12,11 @@ class ComputerPlayer {
         this.uiManager.showThinkingMessage();
 
         try {
-            const response = await this.requestMove();
-            const moveData = await response.json();
+            const { ok, data: moveData } = await this.requestMove();
+            if (!ok) {
+                console.error('Server rejected computer move:', moveData.error || moveData);
+                return null;
+            }
 
             // Process the move
             const board = parseInt(moveData.board);
@@ -70,15 +74,6 @@ class ComputerPlayer {
 
         console.log("Sending move request to server:", requestData);
 
-        return fetch(GAME_CONSTANTS.API_ENDPOINTS.MAKE_MOVE, {
-            method: "POST",
-            mode: 'cors',
-            body: JSON.stringify(requestData),
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept-Charset': 'UTF-8'
-            },
-            credentials: "same-origin"
-        });
+        return this.apiClient.requestComputerTurn(requestData);
     }
 }
