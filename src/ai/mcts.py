@@ -32,8 +32,10 @@ class SimulationTreeNode:
         best_score = -float("inf")
         for m, c in self.children.items():
             score = c.total_score / float(c.number_of_plays)
-            if score >= best_score:
+            if score > best_score:
                 best_score = score
+                action = m
+            elif score == best_score and action is not None and m < action:
                 action = m
         return action
 
@@ -44,8 +46,10 @@ class SimulationTreeNode:
             exploit = c.total_score / float(c.number_of_plays)
             explore = 2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays))
             ucb = exploit + explore
-            if ucb >= best_score:
+            if ucb > best_score:
                 best_score = ucb
+                action = m
+            elif ucb == best_score and action is not None and m < action:
                 action = m
         return action
 
@@ -80,8 +84,8 @@ class SimulationTreeNode:
         score = self.game.board.score(self.player)
         self.children[m].total_score = score
 
-        # Backpropagate
-        for node in game_path:
+        # Backpropagate through path + current node.
+        for node in game_path + [self]:
             node.number_of_plays += 1
             node.total_score += score
             if len(game_path) > node.depth_seen:

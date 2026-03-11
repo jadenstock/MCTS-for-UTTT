@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 from core.game import Game
+from core.state_codec import serialize_game_state, replay_game_from_moves
 
 
 class GameStorage:
@@ -42,12 +43,7 @@ class GameStorage:
             })
 
         # Update current state
-        game_data["current_state"] = {
-            "board": [b.cells for b in game_state.board.boards],
-            "last_move": last_move,
-            "next_to_move": game_state.next_to_move,
-            "winner": game_state.board.winner
-        }
+        game_data["current_state"] = serialize_game_state(game_state)
 
         # Atomic write
         temp_path = path.with_suffix('.tmp')
@@ -147,15 +143,7 @@ class GameStorage:
             }
             
         # Create a new game state from the moves up to move_number
-        from core.game import Game, make_game
-        
-        # Initialize an empty game
-        g = Game()
-        
-        # Apply all moves up to the specified move number
-        for i in range(move_number):
-            move = game_data["moves"][i]
-            g.make_move(move["board"], move["cell"], move["player"])
+        g = replay_game_from_moves(game_data["moves"][:move_number])
             
         # Validate the game state
         if not self._validate_game_state(g):
@@ -166,12 +154,7 @@ class GameStorage:
         restored_data = {
             "game_id": game_id,
             "moves": game_data["moves"],  # Keep all moves in history
-            "current_state": {
-                "board": [b.cells for b in g.board.boards],
-                "last_move": g.move_stack[-1] if g.move_stack else None,
-                "next_to_move": g.next_to_move,
-                "winner": g.board.winner
-            },
+            "current_state": serialize_game_state(g),
             "snapshots": game_data.get("snapshots", []),
             "current_move_index": move_number  # Add this to track where we are in the move history
         }

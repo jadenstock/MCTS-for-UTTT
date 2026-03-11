@@ -1,13 +1,5 @@
-from core.game import Game, make_game
-
-
-def serialize_current_state(game):
-    return {
-        "board": [b.cells for b in game.board.boards],
-        "last_move": game.move_stack[-1] if game.move_stack else None,
-        "next_to_move": game.next_to_move,
-        "winner": game.board.winner,
-    }
+from core.game import Game
+from core.state_codec import game_from_current_state, serialize_game_state
 
 
 def _load_existing_game(storage, game_id):
@@ -19,10 +11,7 @@ def _load_existing_game(storage, game_id):
         return None, 0
 
     current_state = game_data.get("current_state", {})
-    board = current_state.get("board")
-    last_move = current_state.get("last_move")
-    move_stack = [tuple(last_move)] if last_move else []
-    game = make_game(board, move_stack)
+    game = game_from_current_state(current_state)
     prior_moves = len(game_data.get("moves", []))
     return game, prior_moves
 
@@ -57,7 +46,7 @@ def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate
             "board": None,
             "cell": None,
             "metadata": None,
-            "current_state": serialize_current_state(game),
+            "current_state": serialize_game_state(game),
             "move_count": prior_moves + 1,
         }
 
@@ -76,6 +65,6 @@ def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate
         "board": ai_board,
         "cell": ai_cell,
         "metadata": ai_metadata,
-        "current_state": serialize_current_state(game),
+        "current_state": serialize_game_state(game),
         "move_count": prior_moves + 2,
     }
