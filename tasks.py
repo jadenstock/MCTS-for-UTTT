@@ -38,3 +38,20 @@ def validate_config(c, agent="default"):
         f"python -c \"from utils.game_score_utils import validate_config; validate_config(agent_id='{agent}')\"",
         env=env
     )
+
+
+@task
+def benchmark(c, agent_a="default", agent_b="aggressive", games=20, compute_time=60, node_limit=750, opening_random_plies=2, seed=42):
+    """Run reproducible self-play benchmark between two agents."""
+    env = {"PYTHONPATH": "src"}
+    c.run(
+        "python -m core.benchmark "
+        f"--agent-a {agent_a} "
+        f"--agent-b {agent_b} "
+        f"--games {games} "
+        f"--compute-time {compute_time} "
+        f"--node-limit {node_limit} "
+        f"--opening-random-plies {opening_random_plies} "
+        f"--seed {seed}",
+        env=env,
+    )
