@@ -83,27 +83,51 @@ class Game {
                 
                 const data = await response.json();
                 console.log("Server response:", data);
-                
-                // Directly update the board with the computer's move from the server
-                const computerBoard = data.board;
-                const computerCell = data.cell;
-                
-                console.log("Computer move from server:", computerBoard, computerCell);
 
-                // Apply computer move through the same state transition path.
-                const computerMoveSuccess = this.gameState.makeMove(
-                    computerBoard,
-                    computerCell,
-                    GAME_CONSTANTS.PLAYERS.COMPUTER
-                );
-                if (!computerMoveSuccess) {
-                    console.error("Failed to apply computer move to local state");
+                if (!response.ok) {
+                    console.error("Server rejected move:", data.error || data);
                     return;
                 }
-                console.log("Next to move after computer move:", this.gameState.next_to_move);
-                
+
+                // Apply computer move if one exists.
+                if (data.board !== null && data.cell !== null && data.board !== undefined && data.cell !== undefined) {
+                    const computerBoard = data.board;
+                    const computerCell = data.cell;
+                    console.log("Computer move from server:", computerBoard, computerCell);
+
+                    const computerMoveSuccess = this.gameState.makeMove(
+                        computerBoard,
+                        computerCell,
+                        GAME_CONSTANTS.PLAYERS.COMPUTER
+                    );
+                    if (!computerMoveSuccess) {
+                        console.error("Failed to apply computer move to local state");
+                        return;
+                    }
+                }
+
+                // Reconcile local state with authoritative server state.
+                if (data.current_state) {
+                    this.gameState.board = data.current_state.board;
+                    this.gameState.next_to_move = data.current_state.next_to_move.toUpperCase();
+                    this.gameState.winner = data.current_state.winner || null;
+                    this.gameState.boardFull = !!data.current_state.winner;
+
+                    if (typeof data.move_count === "number") {
+                        this.gameState.totalMoves = data.move_count;
+                        this.gameState.moveNumber = data.move_count + 1;
+                    }
+
+                    const lastMove = data.current_state.last_move;
+                    if (lastMove) {
+                        this.gameState.targetBoard = lastMove[1];
+                        this.uiManager.updateLastMove(lastMove[0], lastMove[1]);
+                    } else {
+                        this.gameState.targetBoard = -1;
+                    }
+                }
+
                 // Update UI after computer move
-                this.uiManager.updateLastMove(computerBoard, computerCell);
                 this.gameState.checkBoardStatus();
                 this.uiManager.renderBoard();
                 this.uiManager.forceUpdateCellStates();
