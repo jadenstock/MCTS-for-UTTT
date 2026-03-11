@@ -5,80 +5,102 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Tic-Tac-Toe</title>
+    <title>UTTT Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
     <div class="container">
-        <h1>Ultimate-Tic-Tac-Toe</h1>
-        <h3 id="thinking-message"></h3>
-        <div class="mid-container">
-            <div class="game-board"></div>
-            <div class="agent-metadata">
-                <div class="compute-time-slider">
-                    <h4>Computer Think Time</h4>
+        <header class="hero">
+            <div>
+                <p class="eyebrow">MCTS + Heuristic Battle Board</p>
+                <h1>Ultimate Tic-Tac-Toe Arena</h1>
+            </div>
+            <div class="hero-status">
+                <h3 id="thinking-message"></h3>
+                <h2 id="winner" data-winner=""></h2>
+                <h2 id="last-move" data-last-board="-1" data-last-cell="-1"></h2>
+            </div>
+        </header>
+
+        <main class="workspace">
+            <section class="play-surface">
+                <div class="board-shell">
+                    <div class="board-header">
+                        <h3>Live Match</h3>
+                        <span id="turn-indicator"></span>
+                    </div>
+                    <div class="game-board"></div>
+                </div>
+            </section>
+
+            <aside class="control-rail">
+                <section class="panel compute-time-slider">
+                    <h4>Compute Budget</h4>
+                    <p class="panel-subtitle">Set AI thinking time and inspect runtime.</p>
                     <input type="range" min="5" max="60" value="20" class="computeTime" id="computeTime" onchange="updateSlider(this.value)">
                     <p id="compute-time-value"></p>
-
                     <div class="force-time-option">
                         <input type="checkbox" id="forceFullTime">
                         <label for="forceFullTime">Force full thinking time</label>
                     </div>
                     <p id="actual-think-time">Actual thinking time: ...</p>
-                </div>
+                </section>
 
-                <div class="agent-move-metadata">
-                    <h4><u>Computer Move Metadata</u></h4>
-                    <p id="metadata-nodes-evaluated"><u>Gamestates Evaluated:</u> ...</p>
-                    <p id="metadata-depth-evaluated"><u>Gametree Depth:</u> ...</p>
-                    <p id="metadata-moves"><u>Moves Considered:</u> ...</p>
+                <section class="panel agent-move-metadata">
+                    <h4>Search Telemetry</h4>
+                    <p id="metadata-nodes-evaluated">Gamestates Evaluated: ...</p>
+                    <p id="metadata-depth-evaluated">Gametree Depth: ...</p>
+                    <p id="metadata-moves">Moves Considered: ...</p>
+                </section>
+            </aside>
+        </main>
+
+        <section class="lower-grid">
+            <div class="panel history-controls">
+                <h3>Move History</h3>
+                <div class="move-navigation">
+                    <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First</button>
+                    <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Prev</button>
+                    <span id="current-move-display">Move: 0/0</span>
+                    <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
+                    <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Latest</button>
+                </div>
+                <div class="computer-move-control">
+                    <button id="trigger-computer-move-btn" onclick="game.triggerComputerMove()">Trigger Computer Move</button>
                 </div>
             </div>
-        </div>
-        <h2 id="last-move" data-last-board="-1" data-last-cell="-1"></h2>
-        <h2 id="winner" data-winner=""></h2>
-        
-        <!-- Game History Controls -->
-        <div class="history-controls">
-            <h3>Move History</h3>
-            <div class="move-navigation">
-                <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First Move</button>
-                <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Previous</button>
-                <span id="current-move-display">Move: 0/0</span>
-                <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
-                <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Last Move</button>
+
+            <div class="panel snapshot-controls">
+                <h3>Snapshots</h3>
+                <div class="snapshot-actions">
+                    <input type="text" id="snapshot-name" placeholder="Snapshot Label">
+                    <button id="create-snapshot-btn" onclick="game.uiManager.createSnapshot()">Create Snapshot</button>
+                    <select id="snapshots-select">
+                        <option value="">Select a snapshot...</option>
+                    </select>
+                    <button id="restore-snapshot-btn" onclick="game.uiManager.restoreSelectedSnapshot()">Restore Snapshot</button>
+                </div>
             </div>
-            <div class="computer-move-control">
-                <button id="trigger-computer-move-btn" onclick="game.triggerComputerMove()">Trigger Computer Move</button>
-                <span id="turn-indicator"></span>
+
+            <div class="panel button-container">
+                <h3>Save + Load</h3>
+                <div class="game-name-container">
+                    <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">
+                    <button onclick="game.updateGameName()" class="rename-button">Rename</button>
+                </div>
+                <div class="save-load-row">
+                    <select id="saved-games" class="game-select">
+                        <option value="">Select a game...</option>
+                    </select>
+                    <button onclick="game.loadSelectedGame()">Load Game</button>
+                    <button onclick="reset_board()" class="reset-button">Reset</button>
+                </div>
             </div>
-        </div>
-        
-        <!-- Snapshot Controls -->
-        <div class="snapshot-controls">
-            <h3>Game Snapshots</h3>
-            <div class="snapshot-actions">
-                <input type="text" id="snapshot-name" placeholder="Snapshot Label">
-                <button id="create-snapshot-btn" onclick="game.uiManager.createSnapshot()">Create Snapshot</button>
-                <select id="snapshots-select">
-                    <option value="">Select a snapshot...</option>
-                </select>
-                <button id="restore-snapshot-btn" onclick="game.uiManager.restoreSelectedSnapshot()">Restore Snapshot</button>
-            </div>
-        </div>
-        
-        <div class="button-container">
-            <div class="game-name-container">
-                <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">
-                <button onclick="game.updateGameName()" class="rename-button">Rename</button>
-            </div>
-            <select id="saved-games" class="game-select">
-                <option value="">Select a game...</option>
-            </select>
-            <button onclick="game.loadSelectedGame()">LOAD GAME</button>
-            <button onclick="reset_board()">RESET</button>
-        </div>
+        </section>
     </div>
 
     <!-- Load JavaScript files in correct order -->
