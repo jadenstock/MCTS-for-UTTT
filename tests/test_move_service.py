@@ -15,7 +15,7 @@ class TestMoveService(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             storage = GameStorage(data_dir=tmpdir)
 
-            def fake_eval(game, seconds_limit, verbose=False):
+            def fake_eval(game, agent_id="default", seconds_limit=1, node_limit=100, verbose=False):
                 # After human (4,4), target board is 4.
                 return [4, 0, {"num_gamestates": 1}]
 
@@ -24,6 +24,8 @@ class TestMoveService(unittest.TestCase):
                 game_id="svc-game",
                 human_move=[4, 4, "X"],
                 compute_time=1,
+                node_limit=50,
+                ai_agent_id="default",
                 evaluate_fn=fake_eval,
             )
 
@@ -40,7 +42,7 @@ class TestMoveService(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             storage = GameStorage(data_dir=tmpdir)
 
-            def fake_eval(game, seconds_limit, verbose=False):
+            def fake_eval(game, agent_id="default", seconds_limit=1, node_limit=100, verbose=False):
                 return [4, 0, {"num_gamestates": 1}]
 
             # First legal turn to establish target board=0.
@@ -49,6 +51,8 @@ class TestMoveService(unittest.TestCase):
                 game_id="svc-illegal",
                 human_move=[4, 4, "X"],
                 compute_time=1,
+                node_limit=50,
+                ai_agent_id="default",
                 evaluate_fn=fake_eval,
             )
 
@@ -58,6 +62,8 @@ class TestMoveService(unittest.TestCase):
                     game_id="svc-illegal",
                     human_move=[1, 1, "X"],
                     compute_time=1,
+                    node_limit=50,
+                    ai_agent_id="default",
                     evaluate_fn=fake_eval,
                 )
 

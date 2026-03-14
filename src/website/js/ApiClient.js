@@ -25,12 +25,28 @@ class ApiClient {
         return this.post(this.endpoints.MAKE_MOVE, payload);
     }
 
-    listGames() {
-        return this.get(this.endpoints.LIST_GAMES);
+    requestNextBotMove(payload) {
+        return this.post(this.endpoints.NEXT_MOVE, payload);
+    }
+
+    listGames(inProgressOnly = true) {
+        return this.get(this.endpoints.LIST_GAMES(inProgressOnly));
     }
 
     loadGame(gameId) {
         return this.get(this.endpoints.LOAD_GAME(gameId));
+    }
+
+    listBotGames(inProgressOnly = false) {
+        return this.get(this.endpoints.LIST_BOT_GAMES(inProgressOnly));
+    }
+
+    listBots() {
+        return this.get(this.endpoints.LIST_BOTS);
+    }
+
+    loadBotGame(gameId) {
+        return this.get(this.endpoints.LOAD_BOT_GAME(gameId));
     }
 
     renameGame(gameId, name) {
@@ -39,6 +55,10 @@ class ApiClient {
 
     restoreToMove(gameId, moveNumber) {
         return this.post(this.endpoints.RESTORE_TO_MOVE(gameId, moveNumber));
+    }
+
+    restoreBotToMove(gameId, moveNumber) {
+        return this.post(this.endpoints.RESTORE_BOT_TO_MOVE(gameId, moveNumber));
     }
 
     listSnapshots(gameId) {

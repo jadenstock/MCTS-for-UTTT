@@ -68,8 +68,7 @@ class ComputerPlayer {
             game_id: this.gameState.gameId,
             last_move: [lastBoard, lastCell, lastPlayer],
             game_board: this.gameState.board,
-            compute_time: document.getElementById("computeTime").value,
-            force_full_time: document.getElementById("forceFullTime").checked
+            node_limit: document.getElementById("nodeLimit").value
         };
 
         console.log("Sending move request to server:", requestData);

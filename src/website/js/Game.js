@@ -13,6 +13,96 @@ class Game {
         window.updateSlider = (slideAmount) => {
             this.uiManager.updateComputeTime();
         };
+        this.ensureDescriptiveGameId();
+        this.uiManager.updateGameIdLabel(this.gameState.gameId);
+    }
+
+    isUuidLike(value) {
+        if (!value) return false;
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    }
+
+    sanitizeIdPart(value) {
+        return String(value || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    }
+
+    makeDescriptiveGameId() {
+        const xController = this.uiManager?.xControllerSelect?.value || "player";
+        const oController = this.uiManager?.oControllerSelect?.value || "player";
+        const now = new Date();
+        const ts = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, "0"),
+            String(now.getDate()).padStart(2, "0"),
+            String(now.getHours()).padStart(2, "0"),
+            String(now.getMinutes()).padStart(2, "0"),
+            String(now.getSeconds()).padStart(2, "0"),
+        ].join("");
+        const rand = Math.random().toString(36).slice(2, 6);
+        return `${this.sanitizeIdPart(xController)}_vs_${this.sanitizeIdPart(oController)}_${ts}_${rand}`;
+    }
+
+    ensureDescriptiveGameId(force = false) {
+        if (force || !this.gameState.gameId || this.isUuidLike(this.gameState.gameId)) {
+            this.gameState.gameId = this.makeDescriptiveGameId();
+            this.uiManager.updateGameIdLabel(this.gameState.gameId);
+        }
+    }
+
+    getCurrentController() {
+        return this.uiManager.getControllerForSide(this.gameState.next_to_move);
+    }
+
+    applyAuthoritativeState(data) {
+        if (!data.current_state) {
+            return;
+        }
+        this.gameState.board = this.uiManager.normalizeBoard(data.current_state.board);
+        this.gameState.next_to_move = this.uiManager.normalizeToken(data.current_state.next_to_move);
+        this.gameState.winner = data.current_state.winner ? this.uiManager.normalizeToken(data.current_state.winner) : null;
+        this.gameState.boardFull = !!data.current_state.winner;
+
+        if (typeof data.move_count === "number") {
+            this.gameState.totalMoves = data.move_count;
+            this.gameState.moveNumber = data.move_count + 1;
+        }
+
+        const lastMove = data.current_state.last_move;
+        if (lastMove) {
+            this.gameState.targetBoard = lastMove[1];
+            this.uiManager.updateLastMove(lastMove[0], lastMove[1]);
+        } else {
+            this.gameState.targetBoard = -1;
+        }
+    }
+
+    async runBotTurnsUntilPlayerOrEnd(maxPlies = 81) {
+        let plies = 0;
+        while (plies < maxPlies && !this.gameState.winner && !this.gameState.boardFull) {
+            const controller = this.getCurrentController();
+            if (controller === "player") {
+                break;
+            }
+            const { ok, data } = await this.apiClient.requestNextBotMove({
+                game_id: this.gameState.gameId,
+                node_limit: document.getElementById("nodeLimit").value,
+                ai_agent_id: controller,
+            });
+            if (!ok) {
+                console.error("Bot turn request failed:", data.error || data);
+                break;
+            }
+            this.applyAuthoritativeState(data);
+            this.gameState.checkBoardStatus();
+            this.uiManager.renderBoard();
+            this.uiManager.forceUpdateCellStates();
+            this.uiManager.updateGameStatus();
+            this.uiManager.updateMoveHistoryDisplay();
+            if (data.metadata) {
+                this.uiManager.updateMetadata(data.metadata);
+            }
+            plies += 1;
+        }
     }
 
     async handleCellClick(board, cell) {
@@ -33,8 +123,8 @@ class Game {
         console.log("- Total moves:", this.gameState.totalMoves);
         console.log("- Target board:", this.gameState.targetBoard);
 
-        // Only allow human interaction on human turns.
-        if (this.gameState.next_to_move !== GAME_CONSTANTS.PLAYERS.HUMAN) {
+        // Only allow interaction when current side is configured as Player.
+        if (this.getCurrentController() !== "player") {
             console.log("Move rejected: Not human turn");
             return;
         }
@@ -60,20 +150,22 @@ class Game {
         this.uiManager.updateMoveHistoryDisplay();
 
         // Save the game state if we have a game ID
+        this.ensureDescriptiveGameId();
         if (this.gameState.gameId) {
             try {
                 console.log("Sending move to server:", {
                     game_id: this.gameState.gameId,
                     game_board: this.gameState.board,
                     last_move: [board, cell, GAME_CONSTANTS.PLAYERS.HUMAN],
-                    compute_time: document.getElementById("computeTime").value
+                    node_limit: document.getElementById("nodeLimit").value
                 });
                 
                 const { ok, data } = await this.apiClient.requestComputerTurn({
                     game_id: this.gameState.gameId,
                     game_board: this.gameState.board,
                     last_move: [board, cell, GAME_CONSTANTS.PLAYERS.HUMAN],
-                    compute_time: document.getElementById("computeTime").value
+                    node_limit: document.getElementById("nodeLimit").value,
+                    ai_agent_id: this.uiManager.getControllerForSide(this.gameState.next_to_move),
                 });
                 console.log("Server response:", data);
 
@@ -100,25 +192,7 @@ class Game {
                 }
 
                 // Reconcile local state with authoritative server state.
-                if (data.current_state) {
-                    this.gameState.board = this.uiManager.normalizeBoard(data.current_state.board);
-                    this.gameState.next_to_move = this.uiManager.normalizeToken(data.current_state.next_to_move);
-                    this.gameState.winner = data.current_state.winner ? this.uiManager.normalizeToken(data.current_state.winner) : null;
-                    this.gameState.boardFull = !!data.current_state.winner;
-
-                    if (typeof data.move_count === "number") {
-                        this.gameState.totalMoves = data.move_count;
-                        this.gameState.moveNumber = data.move_count + 1;
-                    }
-
-                    const lastMove = data.current_state.last_move;
-                    if (lastMove) {
-                        this.gameState.targetBoard = lastMove[1];
-                        this.uiManager.updateLastMove(lastMove[0], lastMove[1]);
-                    } else {
-                        this.gameState.targetBoard = -1;
-                    }
-                }
+                this.applyAuthoritativeState(data);
 
                 // Update UI after computer move
                 this.gameState.checkBoardStatus();
@@ -131,6 +205,7 @@ class Game {
                 if (data.metadata) {
                     this.uiManager.updateMetadata(data.metadata);
                 }
+                await this.runBotTurnsUntilPlayerOrEnd();
                 
             } catch (error) {
                 console.error('Error with server communication:', error);
@@ -155,12 +230,18 @@ class Game {
         const selectedId = this.uiManager.savedGamesSelect.value;
         console.log("Selected game:", selectedId);
         if (selectedId) {
-            this.uiManager.loadGame(selectedId);
+            this.uiManager.followLiveGame(null);
+            this.uiManager.loadGame(selectedId, { autoComputerMove: false, source: "user" });
         }
+    }
+
+    loadSelectedInProgressGame() {
+        // Deprecated: in-progress bot games are now loaded from the Bot Games tab list.
     }
 
     reset() {
         this.gameState.reset();
+        this.ensureDescriptiveGameId(true);
         this.uiManager.reset();
         this.uiManager.renderBoard();
     }

@@ -100,13 +100,21 @@ class GameStorage:
                 if in_progress_only and data['current_state']['winner']:
                     continue
 
+                benchmark = data.get('benchmark_context', {}) or {}
+                is_bot_game = bool(benchmark) or str(data.get('game_id', '')).startswith('live_bot_') or str(data.get('game_id', '')).startswith('bench_')
+
                 games.append({
                     'game_id': data['game_id'],
                     'moves': len(data['moves']),
                     'winner': data['current_state']['winner'],
                     'next_to_move': data['current_state']['next_to_move'],
                     'in_progress': not data['current_state']['winner'],
-                    'last_updated': data['moves'][-1]['timestamp'] if data['moves'] else None
+                    'last_updated': data['moves'][-1]['timestamp'] if data['moves'] else None,
+                    'is_bot_game': is_bot_game,
+                    'agent_x': benchmark.get('agent_x'),
+                    'agent_o': benchmark.get('agent_o'),
+                    'node_limit': benchmark.get('node_limit'),
+                    'compute_time': benchmark.get('compute_time'),
                 })
         return games
         

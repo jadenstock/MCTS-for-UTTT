@@ -26,27 +26,41 @@
             </div>
         </header>
 
-        <main class="workspace">
+        <nav class="view-tabs">
+            <button id="tab-play" class="tab-button active" type="button">Board</button>
+            <button id="tab-archive" class="tab-button" type="button">Games</button>
+            <button id="tab-bots" class="tab-button" type="button">Bots</button>
+        </nav>
+
+        <main id="play-view" class="view-panel active">
             <section class="play-surface">
                 <div class="board-shell">
                     <div class="board-header">
                         <h3>Live Match</h3>
                         <span id="turn-indicator"></span>
                     </div>
+                    <p id="game-id-label" class="panel-subtitle"></p>
                     <div class="game-board"></div>
                 </div>
             </section>
 
-            <aside class="control-rail">
-                <section class="panel compute-time-slider">
-                    <h4>Compute Budget</h4>
-                    <p class="panel-subtitle">Set AI thinking time and inspect runtime.</p>
-                    <input type="range" min="5" max="60" value="20" class="computeTime" id="computeTime" onchange="updateSlider(this.value)">
-                    <p id="compute-time-value"></p>
-                    <div class="force-time-option">
-                        <input type="checkbox" id="forceFullTime">
-                        <label for="forceFullTime">Force full thinking time</label>
+            <section class="under-board-grid">
+                <section class="panel side-controls">
+                    <h4>Side Controllers</h4>
+                    <p class="panel-subtitle">Choose Player or Bot for each side.</p>
+                    <div class="save-load-row">
+                        <label for="x-controller">X</label>
+                        <select id="x-controller" class="game-select"></select>
+                        <label for="o-controller">O</label>
+                        <select id="o-controller" class="game-select"></select>
                     </div>
+                </section>
+
+                <section class="panel compute-time-slider">
+                    <h4>Node Budget</h4>
+                    <p class="panel-subtitle">Primary budget for AI search (nodes evaluated).</p>
+                    <input type="range" min="50" max="3000" step="50" value="750" class="computeTime" id="nodeLimit" onchange="updateSlider(this.value)">
+                    <p id="compute-time-value"></p>
                     <p id="actual-think-time">Actual thinking time: ...</p>
                 </section>
 
@@ -56,54 +70,78 @@
                     <p id="metadata-depth-evaluated">Gametree Depth: ...</p>
                     <p id="metadata-moves">Moves Considered: ...</p>
                 </section>
-            </aside>
+            </section>
+
+            <section class="lower-grid">
+                <div class="panel history-controls">
+                    <h3>Move History</h3>
+                    <div class="move-navigation">
+                        <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First</button>
+                        <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Prev</button>
+                        <span id="current-move-display">Move: 0/0</span>
+                        <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
+                        <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Latest</button>
+                    </div>
+                </div>
+
+                <div class="panel snapshot-controls">
+                    <h3>Snapshots</h3>
+                    <div class="snapshot-actions">
+                        <input type="text" id="snapshot-name" placeholder="Snapshot Label">
+                        <button id="create-snapshot-btn" onclick="game.uiManager.createSnapshot()">Create Snapshot</button>
+                        <select id="snapshots-select">
+                            <option value="">Select a snapshot...</option>
+                        </select>
+                        <button id="restore-snapshot-btn" onclick="game.uiManager.restoreSelectedSnapshot()">Restore Snapshot</button>
+                    </div>
+                </div>
+
+                <div class="panel button-container">
+                    <h3>My Games</h3>
+                    <div class="save-load-row">
+                        <select id="saved-games" class="game-select">
+                            <option value="">Select a game...</option>
+                        </select>
+                        <button onclick="game.loadSelectedGame()">Load Game</button>
+                    </div>
+                    <div class="game-name-container">
+                        <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">
+                        <button onclick="game.updateGameName()" class="rename-button">Rename</button>
+                    </div>
+                </div>
+            </section>
         </main>
 
-        <section class="lower-grid">
-            <div class="panel history-controls">
-                <h3>Move History</h3>
-                <div class="move-navigation">
-                    <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First</button>
-                    <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Prev</button>
-                    <span id="current-move-display">Move: 0/0</span>
-                    <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
-                    <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Latest</button>
-                </div>
-                <div class="computer-move-control">
-                    <button id="trigger-computer-move-btn" onclick="game.triggerComputerMove()">Trigger Computer Move</button>
-                </div>
-            </div>
-
-            <div class="panel snapshot-controls">
-                <h3>Snapshots</h3>
-                <div class="snapshot-actions">
-                    <input type="text" id="snapshot-name" placeholder="Snapshot Label">
-                    <button id="create-snapshot-btn" onclick="game.uiManager.createSnapshot()">Create Snapshot</button>
-                    <select id="snapshots-select">
-                        <option value="">Select a snapshot...</option>
-                    </select>
-                    <button id="restore-snapshot-btn" onclick="game.uiManager.restoreSelectedSnapshot()">Restore Snapshot</button>
-                </div>
-            </div>
-
-            <div class="panel button-container">
-                <h3>Save + Load</h3>
-                <div class="game-name-container">
-                    <input type="text" id="game-name" placeholder="Game Name" class="game-name-input">
-                    <button onclick="game.updateGameName()" class="rename-button">Rename</button>
-                </div>
+        <section id="archive-view" class="view-panel">
+            <section class="panel bot-games-panel">
+                <h3>Game Archive</h3>
                 <div class="save-load-row">
-                    <select id="saved-games" class="game-select">
-                        <option value="">Select a game...</option>
+                    <label for="games-filter">Filter</label>
+                    <select id="games-filter" class="game-select">
+                        <option value="all">All</option>
+                        <option value="user">User Games</option>
+                        <option value="bot">Bot Games</option>
+                        <option value="in_progress">In Progress</option>
                     </select>
-                    <button onclick="game.loadSelectedGame()">Load Game</button>
-                    <button onclick="reset_board()" class="reset-button">Reset</button>
                 </div>
-            </div>
+                <div id="bot-games-list" class="bot-games-list"></div>
+            </section>
+        </section>
+
+        <section id="bots-view" class="view-panel">
+            <section class="panel bot-games-panel">
+                <h3>Bots</h3>
+                <p class="panel-subtitle">Browse available bots and core parameters.</p>
+                <div class="save-load-row">
+                    <select id="bots-select" class="game-select">
+                        <option value="">Select a bot...</option>
+                    </select>
+                </div>
+                <pre id="bot-details" class="panel-subtitle"></pre>
+            </section>
         </section>
     </div>
 
-    <!-- Load JavaScript files in correct order -->
     <script src="js/constants.js"></script>
     <script src="js/ApiClient.js"></script>
     <script src="js/GameState.js"></script>

@@ -2,6 +2,8 @@ from core.game import Game
 from core.state_codec import game_from_current_state, serialize_game_state
 
 DEFAULT_UI_AGENT_ID = "pragmatic_v1"
+DEFAULT_UI_NODE_LIMIT = 750
+DEFAULT_UI_SECONDS_LIMIT = 30
 
 
 def _load_existing_game(storage, game_id):
@@ -18,7 +20,15 @@ def _load_existing_game(storage, game_id):
     return game, prior_moves
 
 
-def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate_fn):
+def apply_human_and_ai_move(
+    storage,
+    game_id,
+    human_move,
+    compute_time,
+    node_limit,
+    ai_agent_id,
+    evaluate_fn,
+):
     """Apply a human move then (if game is still live) apply AI response.
 
     Raises:
@@ -52,10 +62,20 @@ def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate
             "move_count": prior_moves + 1,
         }
 
+    if str(ai_agent_id or "").lower() == "player":
+        return {
+            "board": None,
+            "cell": None,
+            "metadata": None,
+            "current_state": serialize_game_state(game),
+            "move_count": prior_moves + 1,
+        }
+
     ai_result = evaluate_fn(
         game,
-        agent_id=DEFAULT_UI_AGENT_ID,
+        agent_id=ai_agent_id or DEFAULT_UI_AGENT_ID,
         seconds_limit=int(compute_time),
+        node_limit=int(node_limit),
         verbose=False,
     )
     if not ai_result or len(ai_result) < 3:
@@ -74,4 +94,46 @@ def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate
         "metadata": ai_metadata,
         "current_state": serialize_game_state(game),
         "move_count": prior_moves + 2,
+    }
+
+
+def apply_ai_only_move(
+    storage,
+    game_id,
+    compute_time,
+    node_limit,
+    ai_agent_id,
+    evaluate_fn,
+):
+    game, prior_moves = _load_existing_game(storage, game_id)
+    if game is None:
+        raise ValueError("Game not found")
+    if game.board.winner or not game.legal_moves():
+        return {
+            "board": None,
+            "cell": None,
+            "metadata": None,
+            "current_state": serialize_game_state(game),
+            "move_count": prior_moves,
+        }
+
+    ai_result = evaluate_fn(
+        game,
+        agent_id=ai_agent_id or DEFAULT_UI_AGENT_ID,
+        seconds_limit=int(compute_time),
+        node_limit=int(node_limit),
+        verbose=False,
+    )
+    if not ai_result or len(ai_result) < 3:
+        raise RuntimeError("AI move evaluation returned invalid result")
+    ai_board, ai_cell, ai_metadata = ai_result
+    if not game.make_move(ai_board, ai_cell, game.next_to_move):
+        raise RuntimeError("Failed to apply computed computer move")
+    storage.save_game(game_id, game, ai_metadata)
+    return {
+        "board": ai_board,
+        "cell": ai_cell,
+        "metadata": ai_metadata,
+        "current_state": serialize_game_state(game),
+        "move_count": prior_moves + 1,
     }

@@ -85,15 +85,34 @@ h1 {
   min-height: 1.2rem;
 }
 
-.workspace {
+.view-tabs {
   margin-top: 1rem;
-  display: grid;
-  grid-template-columns: minmax(320px, 1fr) 350px;
-  gap: 1rem;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.tab-button {
+  background: rgba(12, 30, 33, 0.85);
+  color: var(--text-main);
+  border: 1px solid var(--panel-border);
+}
+
+.tab-button.active {
+  background: linear-gradient(180deg, #f0be49, #d5961e);
+  color: #1d1d1d;
+}
+
+.view-panel {
+  display: none;
+  margin-top: 1rem;
+}
+
+.view-panel.active {
+  display: block;
 }
 
 .play-surface,
-.control-rail,
+.under-board-grid,
 .lower-grid {
   min-width: 0;
 }
@@ -217,16 +236,23 @@ h1 {
   box-shadow: var(--shadow);
 }
 
-.control-rail {
+.under-board-grid {
+  margin-top: 1rem;
   display: grid;
   gap: 1rem;
-  align-content: start;
+  grid-template-columns: 1.15fr 1.2fr 1fr;
 }
 
 .panel-subtitle {
   color: var(--text-muted);
   margin: 0.2rem 0 0.75rem;
   font-size: 0.84rem;
+}
+
+#game-id-label {
+  margin-top: -0.25rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.78rem;
 }
 
 .computeTime {
@@ -266,6 +292,39 @@ h1 {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1.15fr 1fr 1.2fr;
+}
+
+.bot-games-panel {
+  margin-top: 1rem;
+}
+
+.bot-games-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+#bot-details {
+  margin-top: 0.75rem;
+  white-space: pre-wrap;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.bot-game-row {
+  border: 1px solid rgba(130, 196, 196, 0.28);
+  background: rgba(7, 23, 24, 0.56);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.84rem;
+}
+
+.bot-game-row button {
+  padding: 0.4rem 0.55rem;
 }
 
 .move-navigation {
@@ -369,15 +428,11 @@ button:disabled,
 }
 
 @media (max-width: 1150px) {
-  .workspace {
+  .lower-grid {
     grid-template-columns: 1fr;
   }
 
-  .control-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lower-grid {
+  .under-board-grid {
     grid-template-columns: 1fr;
   }
 
@@ -402,10 +457,6 @@ button:disabled,
     border-radius: 14px;
   }
 
-  .control-rail {
-    grid-template-columns: 1fr;
-  }
-
   .move-navigation {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -419,6 +470,10 @@ button:disabled,
   }
 
   .save-load-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bot-game-row {
     grid-template-columns: 1fr;
   }
 }

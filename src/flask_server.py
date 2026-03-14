@@ -4,11 +4,18 @@ import json
 import argparse
 
 from ai.mcts import evaluate_next_move
-from core.move_service import apply_human_and_ai_move
+from bots.registry import list_bot_summaries
+from core.move_service import (
+    apply_human_and_ai_move,
+    apply_ai_only_move,
+    DEFAULT_UI_NODE_LIMIT,
+    DEFAULT_UI_SECONDS_LIMIT,
+)
 from utils.game_storage import GameStorage
 
 app = Flask(__name__)
-storage = GameStorage()
+storage = GameStorage(data_dir="data/games")
+bot_storage = GameStorage(data_dir="data/bot_games")
 
 
 @app.route('/api/makemove/', methods=['POST', 'OPTIONS'])
@@ -30,7 +37,34 @@ def make_move():
             storage=storage,
             game_id=data.get("game_id"),
             human_move=data.get("last_move"),
-            compute_time=data.get("compute_time", 5),
+            compute_time=data.get("compute_time", DEFAULT_UI_SECONDS_LIMIT),
+            node_limit=data.get("node_limit", DEFAULT_UI_NODE_LIMIT),
+            ai_agent_id=data.get("ai_agent_id"),
+            evaluate_fn=evaluate_next_move,
+        )
+        return jsonify(response_data)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/nextmove/', methods=['POST', 'OPTIONS'])
+@flask_cors.cross_origin()
+def next_move():
+    try:
+        data = request.get_json()
+        if isinstance(data, str):
+            data = json.loads(data)
+    except Exception as e:
+        return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
+    try:
+        response_data = apply_ai_only_move(
+            storage=storage,
+            game_id=data.get("game_id"),
+            compute_time=data.get("compute_time", DEFAULT_UI_SECONDS_LIMIT),
+            node_limit=data.get("node_limit", DEFAULT_UI_NODE_LIMIT),
+            ai_agent_id=data.get("ai_agent_id"),
             evaluate_fn=evaluate_next_move,
         )
         return jsonify(response_data)
@@ -49,6 +83,20 @@ def list_games():
     return jsonify(games)
 
 
+@app.route('/api/bot-games', methods=['GET'])
+@flask_cors.cross_origin()
+def list_bot_games():
+    in_progress = request.args.get('in_progress', 'false').lower() == 'true'
+    games = bot_storage.list_games(in_progress_only=in_progress)
+    return jsonify(games)
+
+
+@app.route('/api/bots', methods=['GET'])
+@flask_cors.cross_origin()
+def list_bots():
+    return jsonify(list_bot_summaries())
+
+
 @app.route('/api/games/<game_id>', methods=['GET'])
 @flask_cors.cross_origin()
 def get_game(game_id):
@@ -56,6 +104,15 @@ def get_game(game_id):
     if game_data:
         return jsonify(game_data)
     return jsonify({"error": "Game not found"}), 404
+
+
+@app.route('/api/bot-games/<game_id>', methods=['GET'])
+@flask_cors.cross_origin()
+def get_bot_game(game_id):
+    game_data = bot_storage.load_game(game_id)
+    if game_data:
+        return jsonify(game_data)
+    return jsonify({"error": "Bot game not found"}), 404
 
 
 @app.route('/api/games/rename/<game_id>', methods=['POST', 'OPTIONS'])
@@ -91,6 +148,19 @@ def restore_to_move(game_id, move_number):
             return jsonify({"error": "Failed to restore game"}), 400
     except Exception as e:
         print(f"Error restoring game to move {move_number}: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/bot-games/<game_id>/restore/<int:move_number>', methods=['POST'])
+@flask_cors.cross_origin()
+def restore_bot_game_to_move(game_id, move_number):
+    try:
+        restored_data = bot_storage.restore_to_move(game_id, move_number)
+        if restored_data:
+            return jsonify({"success": True, "game": restored_data})
+        return jsonify({"error": "Failed to restore bot game"}), 400
+    except Exception as e:
+        print(f"Error restoring bot game to move {move_number}: {e}")
         return jsonify({"error": str(e)}), 500
 
 

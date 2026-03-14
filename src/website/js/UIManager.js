@@ -2,7 +2,11 @@ class UIManager {
     constructor(gameState, apiClient) {
         this.gameState = gameState;
         this.apiClient = apiClient;
+        this.liveFollowGameId = null;
+        this.activeGameSource = "user";
         this.initializeElements();
+        this.initializeTabs();
+        this.startArchivePolling();
 
         // Add debug log
         console.log("UIManager constructor complete");
@@ -12,11 +16,15 @@ class UIManager {
             document.addEventListener('DOMContentLoaded', () => {
                 console.log("DOMContentLoaded event fired");
                 this.updateSavedGamesDropdown();
+                this.updateBotGamesList();
+                this.initializeBotSelectors();
             });
         } else {
             // DOM is already ready
             console.log("DOM already loaded, updating dropdown immediately");
             this.updateSavedGamesDropdown();
+            this.updateBotGamesList();
+            this.initializeBotSelectors();
         }
     }
 
@@ -25,11 +33,24 @@ class UIManager {
         this.boardContainer = document.querySelector(".game-board");
         this.winnerElement = document.getElementById("winner");
         this.lastMoveElement = document.getElementById("last-move");
+        this.gameIdLabel = document.getElementById("game-id-label");
         this.computeTimeValue = document.getElementById("compute-time-value");
         this.movesElement = document.getElementById("metadata-moves");
         this.thinkingMessage = document.getElementById("thinking-message");
         this.savedGamesSelect = document.getElementById("saved-games");
+        this.botGamesListElement = document.getElementById("bot-games-list");
+        this.gamesFilterSelect = document.getElementById("games-filter");
+        this.xControllerSelect = document.getElementById("x-controller");
+        this.oControllerSelect = document.getElementById("o-controller");
+        this.botsSelect = document.getElementById("bots-select");
+        this.botDetailsElement = document.getElementById("bot-details");
         this.gameNameInput = document.getElementById("game-name");
+        this.playTabButton = document.getElementById("tab-play");
+        this.archiveTabButton = document.getElementById("tab-archive");
+        this.botsTabButton = document.getElementById("tab-bots");
+        this.playView = document.getElementById("play-view");
+        this.archiveView = document.getElementById("archive-view");
+        this.botsView = document.getElementById("bots-view");
         
         // Move history elements
         this.currentMoveDisplay = document.getElementById("current-move-display");
@@ -51,6 +72,87 @@ class UIManager {
         console.log("Saved games select element:", this.savedGamesSelect);
     }
 
+    async initializeBotSelectors() {
+        try {
+            const { ok, data } = await this.apiClient.listBots();
+            if (!ok || !Array.isArray(data)) {
+                return;
+            }
+            const options = [{ bot_id: "player", family: "human", notes: "Human player" }, ...data];
+            const fill = (select, withHuman = true) => {
+                if (!select) return;
+                select.innerHTML = "";
+                if (withHuman) {
+                    const human = document.createElement("option");
+                    human.value = "player";
+                    human.textContent = "player (human)";
+                    select.appendChild(human);
+                }
+                const families = {};
+                options.forEach(opt => {
+                    if (opt.bot_id === "player") return;
+                    const fam = opt.family || "unknown";
+                    if (!families[fam]) families[fam] = [];
+                    families[fam].push(opt);
+                });
+                Object.keys(families).sort().forEach(fam => {
+                    const group = document.createElement("optgroup");
+                    group.label = `${fam} family`;
+                    families[fam].sort((a, b) => a.bot_id.localeCompare(b.bot_id)).forEach(opt => {
+                        const option = document.createElement("option");
+                        option.value = opt.bot_id;
+                        option.textContent = `${opt.bot_id} (preset)`;
+                        group.appendChild(option);
+                    });
+                    select.appendChild(group);
+                });
+            };
+            fill(this.xControllerSelect, true);
+            fill(this.oControllerSelect, true);
+            fill(this.botsSelect, false);
+            if (this.xControllerSelect) this.xControllerSelect.value = "player";
+            if (this.oControllerSelect) this.oControllerSelect.value = "pragmatic_v1";
+            if (this.botsSelect && data.length > 0) {
+                this.botsSelect.value = data[0].bot_id;
+                this.renderBotDetails(data[0]);
+            }
+            if (this.botsSelect) {
+                this.botsSelect.addEventListener("change", () => {
+                    const selected = data.find(x => x.bot_id === this.botsSelect.value);
+                    this.renderBotDetails(selected || null);
+                });
+            }
+        } catch (e) {
+            console.error("Failed to initialize bot selectors:", e);
+        }
+    }
+
+    renderBotDetails(bot) {
+        if (!this.botDetailsElement) return;
+        if (!bot) {
+            this.botDetailsElement.textContent = "";
+            return;
+        }
+        this.botDetailsElement.textContent = [
+            `family: ${bot.family}`,
+            `preset_id: ${bot.bot_id}`,
+            `ucb_constant: ${bot.ucb_constant}`,
+            `rollout_depth: ${bot.rollout_depth}`,
+            `notes: ${bot.notes || ""}`,
+        ].join("\n");
+    }
+
+    getControllerForSide(sideToken) {
+        const side = this.normalizeToken(sideToken);
+        if (side === "X" && this.xControllerSelect) {
+            return this.xControllerSelect.value || "player";
+        }
+        if (side === "O" && this.oControllerSelect) {
+            return this.oControllerSelect.value || "player";
+        }
+        return "player";
+    }
+
     normalizeToken(token) {
         return token ? token.toString().toUpperCase() : "";
     }
@@ -62,7 +164,7 @@ class UIManager {
     async updateSavedGamesDropdown() {
         console.log("Attempting to update saved games dropdown");
         try {
-            const { ok, data: games } = await this.apiClient.listGames();
+            const { ok, data: games } = await this.apiClient.listGames(false);
             console.log("API response received:", ok);
             console.log("Games data:", games);
             if (!ok) {
@@ -77,8 +179,11 @@ class UIManager {
             // Clear existing options except the first placeholder
             this.savedGamesSelect.innerHTML = '<option value="">Select a game...</option>';
 
-            // Add an option for each saved game
+            // Add only non-bot games to the user dropdown.
             games.forEach(game => {
+                if (game.is_bot_game) {
+                    return;
+                }
                 const option = document.createElement('option');
                 option.value = game.game_id;
                 option.textContent = game.name || `Game ${game.game_id.slice(0, 8)}...`;
@@ -91,22 +196,160 @@ class UIManager {
         }
     }
 
+    async updateBotGamesList() {
+        if (!this.botGamesListElement) {
+            return;
+        }
+        try {
+            const [{ ok: okUser, data: userGames }, { ok: okBot, data: botGames }] = await Promise.all([
+                this.apiClient.listGames(false),
+                this.apiClient.listBotGames(false),
+            ]);
+            if (!okUser || !okBot) {
+                throw new Error("Failed to load games list");
+            }
+            const merged = [
+                ...userGames.filter(g => !g.is_bot_game).map(g => ({ ...g, source: "user" })),
+                ...botGames.map(g => ({ ...g, source: "bot", is_bot_game: true })),
+            ];
+            const filter = this.gamesFilterSelect ? this.gamesFilterSelect.value : "all";
+            const filtered = merged.filter(game => {
+                if (filter === "user") return game.source === "user";
+                if (filter === "bot") return game.source === "bot";
+                if (filter === "in_progress") return game.in_progress;
+                return true;
+            }).sort((a, b) => {
+                const ta = a.last_updated || "";
+                const tb = b.last_updated || "";
+                return tb.localeCompare(ta);
+            });
+            if (!filtered.length) {
+                this.botGamesListElement.innerHTML = "<p class='panel-subtitle'>No games for selected filter.</p>";
+                return;
+            }
+            this.botGamesListElement.innerHTML = "";
+            filtered.forEach(game => {
+                const row = document.createElement("div");
+                row.className = "bot-game-row";
+                const status = game.in_progress ? "in_progress" : (game.winner || "draw");
+                row.innerHTML = `
+                    <div>${game.game_id}</div>
+                    <div>${game.source} | x=${game.agent_x || "?"} o=${game.agent_o || "?"}</div>
+                    <div>status=${status}</div>
+                    <div>nodes=${game.node_limit ?? "n/a"}</div>
+                    <button type="button">View</button>
+                `;
+                row.querySelector("button").addEventListener("click", async () => {
+                    this.followLiveGame(game.in_progress ? game.game_id : null);
+                    this.activeGameSource = game.source;
+                    await this.loadGame(game.game_id, { autoComputerMove: false, source: game.source });
+                    this.switchTab("play");
+                });
+                this.botGamesListElement.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Failed to load bot games list:", error);
+            this.botGamesListElement.innerHTML = "<p class='panel-subtitle'>Failed to load bot games.</p>";
+        }
+    }
+
     updateGameName(name) {
         if (this.gameNameInput) {
             this.gameNameInput.value = name;
         }
     }
 
-    async loadGame(gameId) {
+    updateGameIdLabel(gameId) {
+        if (!this.gameIdLabel) {
+            return;
+        }
+        this.gameIdLabel.textContent = gameId ? `Game ID: ${gameId}` : "";
+    }
+
+    initializeTabs() {
+        if (!this.playTabButton || !this.archiveTabButton || !this.playView || !this.archiveView) {
+            return;
+        }
+        this.playTabButton.addEventListener("click", () => this.switchTab("play"));
+        this.archiveTabButton.addEventListener("click", () => this.switchTab("archive"));
+        if (this.botsTabButton) {
+            this.botsTabButton.addEventListener("click", () => this.switchTab("bots"));
+        }
+        if (this.gamesFilterSelect) {
+            this.gamesFilterSelect.addEventListener("change", () => this.updateBotGamesList());
+        }
+    }
+
+    switchTab(tabName) {
+        const playActive = tabName === "play";
+        const archiveActive = tabName === "archive";
+        const botsActive = tabName === "bots";
+        this.playTabButton.classList.toggle("active", playActive);
+        this.archiveTabButton.classList.toggle("active", archiveActive);
+        if (this.botsTabButton) {
+            this.botsTabButton.classList.toggle("active", botsActive);
+        }
+        this.playView.classList.toggle("active", playActive);
+        this.archiveView.classList.toggle("active", archiveActive);
+        if (this.botsView) {
+            this.botsView.classList.toggle("active", botsActive);
+        }
+        if (archiveActive) {
+            this.updateBotGamesList();
+        }
+    }
+
+    startArchivePolling() {
+        setInterval(async () => {
+            await this.updateSavedGamesDropdown();
+            await this.updateBotGamesList();
+
+            if (!this.liveFollowGameId) {
+                return;
+            }
+            try {
+                const liveLoader = this.activeGameSource === "bot"
+                    ? this.apiClient.loadBotGame.bind(this.apiClient)
+                    : this.apiClient.loadGame.bind(this.apiClient);
+                const { ok, data } = await liveLoader(this.liveFollowGameId);
+                if (!ok) {
+                    return;
+                }
+                if (data.current_state && !data.current_state.winner) {
+                    await this.loadGame(this.liveFollowGameId, {
+                        autoComputerMove: false,
+                        source: this.activeGameSource,
+                    });
+                } else {
+                    this.liveFollowGameId = null;
+                }
+            } catch (err) {
+                console.error("Archive polling error:", err);
+            }
+        }, 2500);
+    }
+
+    followLiveGame(gameId) {
+        this.liveFollowGameId = gameId || null;
+    }
+
+    async loadGame(gameId, options = {}) {
         try {
-            const { ok, data: gameData } = await this.apiClient.loadGame(gameId);
+            const autoComputerMove = !!options.autoComputerMove;
+            const source = options.source || this.activeGameSource || "user";
+            const loader = source === "bot"
+                ? this.apiClient.loadBotGame.bind(this.apiClient)
+                : this.apiClient.loadGame.bind(this.apiClient);
+            const { ok, data: gameData } = await loader(gameId);
             if (!ok) {
                 throw new Error(gameData.error || "Failed to load game");
             }
+            this.activeGameSource = source;
 
             // Update the game state
             this.gameState.board = this.normalizeBoard(gameData.current_state.board);
             this.gameState.gameId = gameData.game_id;
+            this.updateGameIdLabel(this.gameState.gameId);
             this.gameState.moveNumber = gameData.moves.length + 1;
             this.gameState.totalMoves = gameData.moves.length;
             this.gameState.moves = gameData.moves;
@@ -155,7 +398,7 @@ class UIManager {
             this.updateSnapshotsDropdown();
 
             // If it's computer's turn (O), trigger a move
-            if (gameData.current_state.next_to_move === "o") {
+            if (autoComputerMove && gameData.current_state.next_to_move === "o" && this.playView && this.playView.classList.contains("active")) {
                 const computerMove = await window.game.computerPlayer.makeMove();
                 if (computerMove) {
                     this.gameState.checkBoardStatus();
@@ -292,8 +535,12 @@ class UIManager {
     }
 
     updateComputeTime() {
-        const time = document.getElementById("computeTime").value;
-        this.computeTimeValue.innerHTML = `${time} seconds`;
+        const nodeLimitEl = document.getElementById("nodeLimit");
+        if (!nodeLimitEl) {
+            return;
+        }
+        const nodes = nodeLimitEl.value;
+        this.computeTimeValue.innerHTML = `${nodes} nodes`;
     }
 
     updateMetadata(metadata) {
@@ -341,18 +588,24 @@ class UIManager {
         if (this.gameState.winner || this.gameState.boardFull) {
             this.turnIndicator.textContent = "Game Over";
             this.turnIndicator.style.color = "black";
-            this.triggerComputerMoveBtn.disabled = true;
+            if (this.triggerComputerMoveBtn) {
+                this.triggerComputerMoveBtn.disabled = true;
+            }
             return;
         }
         
         if (this.gameState.next_to_move === GAME_CONSTANTS.PLAYERS.HUMAN) {
             this.turnIndicator.textContent = "Your Turn (X)";
             this.turnIndicator.style.color = "blue";
-            this.triggerComputerMoveBtn.disabled = true;
+            if (this.triggerComputerMoveBtn) {
+                this.triggerComputerMoveBtn.disabled = true;
+            }
         } else {
             this.turnIndicator.textContent = "Computer's Turn (O)";
             this.turnIndicator.style.color = "red";
-            this.triggerComputerMoveBtn.disabled = false;
+            if (this.triggerComputerMoveBtn) {
+                this.triggerComputerMoveBtn.disabled = false;
+            }
         }
     }
 
@@ -378,6 +631,7 @@ class UIManager {
         
         // Clear snapshots dropdown
         this.snapshotsSelect.innerHTML = '<option value="">Select a snapshot...</option>';
+        this.updateGameIdLabel(this.gameState.gameId);
 
         // Reset metadata displays
         document.getElementById("metadata-nodes-evaluated").innerHTML =
@@ -413,7 +667,10 @@ class UIManager {
         
         try {
             this.showThinkingMessage();
-            const { ok, data } = await this.apiClient.restoreToMove(this.gameState.gameId, moveNumber);
+            const restorer = this.activeGameSource === "bot"
+                ? this.apiClient.restoreBotToMove.bind(this.apiClient)
+                : this.apiClient.restoreToMove.bind(this.apiClient);
+            const { ok, data } = await restorer(this.gameState.gameId, moveNumber);
             if (!ok) {
                 throw new Error(data.error || "Failed to restore move");
             }
