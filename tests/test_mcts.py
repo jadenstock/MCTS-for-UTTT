@@ -59,6 +59,28 @@ class TestMCTS(unittest.TestCase):
         result = evaluate_next_move(game, seconds_limit=1, node_limit=80, verbose=False)
         self.assertNotEqual((result[0], result[1]), (5, 0))
 
+    def test_metadata_moves_include_rollout_counts(self):
+        game = Game()
+        result = evaluate_next_move(game, seconds_limit=30, node_limit=40, verbose=False)
+        move_entries = result[2]["moves"]
+        self.assertGreater(len(move_entries), 0)
+        first_entry = move_entries[0]
+        self.assertEqual(len(first_entry), 3)
+        self.assertIsInstance(first_entry[2], int)
+        self.assertGreaterEqual(first_entry[2], 1)
+
+    def test_single_legal_move_skips_search_and_returns_immediately(self):
+        board = [["" for _ in range(9)] for _ in range(9)]
+        board[0] = ["x", "o", "x", "x", "o", "o", "o", "x", ""]
+        board[4][0] = "x"
+        game = make_game(board, [(4, 0, "x")])
+
+        self.assertEqual(game.legal_moves(), [(0, 8)])
+        result = evaluate_next_move(game, seconds_limit=20, node_limit=1000, verbose=False)
+        self.assertEqual((result[0], result[1]), (0, 8))
+        self.assertTrue(result[2]["early_stop"])
+        self.assertEqual(result[2]["num_gamestates"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -176,6 +176,25 @@ def evaluate_next_move(game,
                        verbose=True,
                        metadata=True):
     """Main MCTS driver function with same interface as original."""
+    legal = game.legal_moves()
+    if len(legal) == 1:
+        only_move = legal[0]
+        if metadata:
+            player = game.next_to_move
+            game.make_move(only_move[0], only_move[1], player)
+            forced_score = game.board.score(player, agent_id=agent_id)
+            game.undo_last_move()
+            move_metadata = {
+                "num_gamestates": 0,
+                "depth_explored": 0,
+                "moves": [(only_move, forced_score, 0)],
+                "thinking_time": 0.0,
+                "early_stop": True,
+            }
+            return [only_move[0], only_move[1], move_metadata]
+        return only_move
+    if not legal:
+        return None
 
     node = SimulationTreeNode(game, game.next_to_move, agent_id=agent_id)
     start_time = time.time()
@@ -190,11 +209,15 @@ def evaluate_next_move(game,
     best_move = _select_tactically_safe_move(game, node)
 
     if metadata:
+        move_summaries = [
+            (m, node.get_score_of_move(m), int(node.children[m].number_of_plays))
+            for m in node.children
+        ]
         move_metadata = {
             "num_gamestates": node.number_of_plays,
             "depth_explored": node.depth_seen,
-            "moves": sorted([(m, node.get_score_of_move(m)) for m in node.children],
-                            key=lambda x: x[1])[::-1],
+            # entries: ((board, cell), avg_score, rollouts)
+            "moves": sorted(move_summaries, key=lambda x: (x[1], x[2]), reverse=True),
             "thinking_time": time.time() - start_time,
             "early_stop": False  # Simplified to always use full time
         }
@@ -206,8 +229,8 @@ def evaluate_next_move(game,
             print("score of best move: {}".format(
                 node.children[best_move].total_score / float(node.children[best_move].number_of_plays)))
             print("top moves:\n")
-            for m, s in move_metadata["moves"]:
-                print("\tmove: {}\tnum_plays: {}\tscore: {}".format(m, node.children[m].number_of_plays, s))
+            for m, s, r in move_metadata["moves"]:
+                print("\tmove: {}\tnum_plays: {}\tscore: {}".format(m, r, s))
 
         return [best_move[0], best_move[1], move_metadata]
     return best_move

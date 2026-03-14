@@ -32,6 +32,18 @@ class TestCoreGame(unittest.TestCase):
         self.assertEqual(game.move_stack, [])
         self.assertEqual(game.board.boards[4].cells[4], "")
 
+    def test_board_score_returns_half_for_terminal_draw(self):
+        game = Game()
+        drawn_miniboard = ["x", "o", "x", "x", "o", "o", "o", "x", "x"]
+        for mini_board in game.board.boards:
+            mini_board.cells = list(drawn_miniboard)
+        game.evaluate_winners()
+
+        self.assertEqual(game.board.winner, "")
+        self.assertEqual(game.legal_moves(), [])
+        self.assertAlmostEqual(game.board.score("x"), 0.5, places=6)
+        self.assertAlmostEqual(game.board.score("o"), 0.5, places=6)
+
 
 if __name__ == "__main__":
     unittest.main()

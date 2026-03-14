@@ -303,9 +303,14 @@ class UIManager {
     updateMovesConsidered(moves) {
         this.movesElement.innerHTML = '<br><u>Moves Considered:</u><br>';
         moves.slice(0, 9).forEach(move => {
+            const board = parseInt(move[0][0]);
+            const cell = parseInt(move[0][1]);
+            const score = parseFloat(move[1]);
+            const rollouts = move.length > 2 ? parseInt(move[2]) : null;
             this.movesElement.innerHTML +=
-                `B${parseInt(move[0][0]) + 1}C${parseInt(move[0][1]) + 1}\t\t` +
-                `score: ${parseFloat(move[1]).toFixed(5)}<br>`;
+                `B${board + 1}C${cell + 1}\t\t` +
+                `score: ${score.toFixed(5)}` +
+                `${Number.isInteger(rollouts) ? ` | rollouts: ${rollouts}` : ''}<br>`;
         });
     }
 

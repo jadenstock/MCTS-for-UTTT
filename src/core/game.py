@@ -43,6 +43,13 @@ class Board:
             return 1.0
         if self.winner == opponent:
             return 0.0
+        # Terminal draw: no global winner and no playable cells left.
+        has_playable_cells = any(
+            mini_board.winner == "" and any(cell == "" for cell in mini_board.cells)
+            for mini_board in self.boards
+        )
+        if not has_playable_cells:
+            return 0.5
 
         # Load additional configuration parameters for board scoring
         config = load_agent_config(agent_id=agent_id)
