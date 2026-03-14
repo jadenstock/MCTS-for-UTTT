@@ -1,6 +1,8 @@
 from core.game import Game
 from core.state_codec import game_from_current_state, serialize_game_state
 
+DEFAULT_UI_AGENT_ID = "pragmatic_v1"
+
 
 def _load_existing_game(storage, game_id):
     if not game_id:
@@ -50,7 +52,12 @@ def apply_human_and_ai_move(storage, game_id, human_move, compute_time, evaluate
             "move_count": prior_moves + 1,
         }
 
-    ai_result = evaluate_fn(game, seconds_limit=int(compute_time), verbose=False)
+    ai_result = evaluate_fn(
+        game,
+        agent_id=DEFAULT_UI_AGENT_ID,
+        seconds_limit=int(compute_time),
+        verbose=False,
+    )
     if not ai_result or len(ai_result) < 3:
         raise RuntimeError("AI move evaluation returned invalid result")
 
