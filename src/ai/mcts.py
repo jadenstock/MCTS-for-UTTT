@@ -6,6 +6,60 @@ DEFAULT_SECONDS_LIMIT = 30
 DEFAULT_NODE_LIMIT = 100000
 
 
+def _mean_child_score(node, move):
+    child = node.children.get(move)
+    if child is None or child.number_of_plays <= 0:
+        return 0.0
+    return child.total_score / float(child.number_of_plays)
+
+
+def _opponent_immediate_threat_level(game, move, player):
+    """Classify tactical risk after `player` makes `move`.
+
+    Returns:
+        int: 0 = no immediate opponent win found
+             1 = opponent can immediately win a local board
+             2 = opponent can immediately win the global board
+    """
+    opponent = "o" if player == "x" else "x"
+    if not game.make_move(move[0], move[1], player):
+        return 2
+
+    threat_level = 0
+    for opp_move in game.legal_moves():
+        if not game.make_move(opp_move[0], opp_move[1], opponent):
+            continue
+        if game.board.winner == opponent:
+            threat_level = 2
+            game.undo_last_move()
+            break
+        if game.board.boards[opp_move[0]].winner == opponent:
+            threat_level = max(threat_level, 1)
+        game.undo_last_move()
+
+    game.undo_last_move()
+    return threat_level
+
+
+def _select_tactically_safe_move(game, node):
+    player = game.next_to_move
+    legal = game.legal_moves()
+    if not legal:
+        return None
+
+    best_move = None
+    best_key = None
+    for move in legal:
+        threat_level = _opponent_immediate_threat_level(game, move, player)
+        score = _mean_child_score(node, move)
+        # Prefer lower tactical risk first, then higher search score, then stable tie-break.
+        key = (-threat_level, score, -move[0], -move[1])
+        if best_key is None or key > best_key:
+            best_key = key
+            best_move = move
+    return best_move
+
+
 class SimulationTreeNode:
     def __init__(self, game, player, agent_id='default'):
         self.game = game
@@ -40,10 +94,13 @@ class SimulationTreeNode:
         return action
 
     def get_best_action_by_ucb1(self, C):
+        maximize_root_score = self.game.next_to_move == self.player
         action = None
         best_score = -float("inf")
         for m, c in self.children.items():
-            exploit = c.total_score / float(c.number_of_plays)
+            mean_root_score = c.total_score / float(c.number_of_plays)
+            # Opponent turns should minimize the root player's score.
+            exploit = mean_root_score if maximize_root_score else (1.0 - mean_root_score)
             explore = 2 * C * math.sqrt(2 * math.log(self.number_of_plays) / float(c.number_of_plays))
             ucb = exploit + explore
             if ucb > best_score:
@@ -130,7 +187,7 @@ def evaluate_next_move(game,
         # time_ratio = elapsed / seconds_limit
         node.expand_tree_by_one()
 
-    best_move = node.get_best_action_by_average_score()
+    best_move = _select_tactically_safe_move(game, node)
 
     if metadata:
         move_metadata = {
