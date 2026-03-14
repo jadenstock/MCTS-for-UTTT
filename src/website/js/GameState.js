@@ -88,8 +88,11 @@ class GameState {
         ];
 
         for (const [a, b, c] of lines) {
-            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                return board[a];
+            const va = (board[a] || "").toString().toUpperCase();
+            const vb = (board[b] || "").toString().toUpperCase();
+            const vc = (board[c] || "").toString().toUpperCase();
+            if (va && va === vb && va === vc) {
+                return va;
             }
         }
         return "";

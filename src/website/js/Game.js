@@ -101,9 +101,9 @@ class Game {
 
                 // Reconcile local state with authoritative server state.
                 if (data.current_state) {
-                    this.gameState.board = data.current_state.board;
-                    this.gameState.next_to_move = data.current_state.next_to_move.toUpperCase();
-                    this.gameState.winner = data.current_state.winner || null;
+                    this.gameState.board = this.uiManager.normalizeBoard(data.current_state.board);
+                    this.gameState.next_to_move = this.uiManager.normalizeToken(data.current_state.next_to_move);
+                    this.gameState.winner = data.current_state.winner ? this.uiManager.normalizeToken(data.current_state.winner) : null;
                     this.gameState.boardFull = !!data.current_state.winner;
 
                     if (typeof data.move_count === "number") {

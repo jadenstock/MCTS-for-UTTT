@@ -51,6 +51,14 @@ class UIManager {
         console.log("Saved games select element:", this.savedGamesSelect);
     }
 
+    normalizeToken(token) {
+        return token ? token.toString().toUpperCase() : "";
+    }
+
+    normalizeBoard(board) {
+        return board.map(miniBoard => miniBoard.map(cell => this.normalizeToken(cell)));
+    }
+
     async updateSavedGamesDropdown() {
         console.log("Attempting to update saved games dropdown");
         try {
@@ -97,18 +105,18 @@ class UIManager {
             }
 
             // Update the game state
-            this.gameState.board = gameData.current_state.board;
+            this.gameState.board = this.normalizeBoard(gameData.current_state.board);
             this.gameState.gameId = gameData.game_id;
             this.gameState.moveNumber = gameData.moves.length + 1;
             this.gameState.totalMoves = gameData.moves.length;
             this.gameState.moves = gameData.moves;
             
             // Critical: Update next_to_move from the server response
-            this.gameState.next_to_move = gameData.current_state.next_to_move;
+            this.gameState.next_to_move = this.normalizeToken(gameData.current_state.next_to_move);
             console.log("Next to move after loading game:", this.gameState.next_to_move);
             
             // Reset winner and boardFull to allow continued play
-            this.gameState.winner = gameData.current_state.winner || null;
+            this.gameState.winner = gameData.current_state.winner ? this.normalizeToken(gameData.current_state.winner) : null;
             this.gameState.boardFull = !!gameData.current_state.winner;
 
             // Update game name if it exists
@@ -240,8 +248,7 @@ class UIManager {
         if (this.lastMoveElement.dataset.lastCell === "-1") {
             this.gameState.board.forEach((miniBoard, i) => {
                 miniBoard.forEach((cell, j) => {
-                    if (cell === GAME_CONSTANTS.PLAYERS.HUMAN ||
-                        cell === GAME_CONSTANTS.PLAYERS.COMPUTER) {
+                    if (cell) {
                         document.querySelector(`#cell_${i}${j}`).classList.add("occupied");
                     }
                 });
@@ -259,8 +266,7 @@ class UIManager {
                 }
 
                 // Mark occupied cells
-                if (cell === GAME_CONSTANTS.PLAYERS.HUMAN ||
-                    cell === GAME_CONSTANTS.PLAYERS.COMPUTER) {
+                if (cell) {
                     document.querySelector(`#cell_${i}${j}`).classList.add("occupied");
                 }
 
@@ -416,7 +422,7 @@ class UIManager {
                 const gameData = data.game;
                 
                 // Update the board state to the current move
-                this.gameState.board = gameData.current_state.board;
+                this.gameState.board = this.normalizeBoard(gameData.current_state.board);
                 
                 // Set the current move number based on the current_move_index
                 const currentMoveIndex = gameData.current_move_index || moveNumber;
@@ -429,7 +435,7 @@ class UIManager {
                 console.log(`Move navigation: ${this.gameState.moveNumber - 1}/${this.gameState.totalMoves}`);
                 
                 // Critical: Update next_to_move from the server response
-                this.gameState.next_to_move = gameData.current_state.next_to_move;
+                this.gameState.next_to_move = this.normalizeToken(gameData.current_state.next_to_move);
                 console.log("Next to move after navigation:", this.gameState.next_to_move);
                 
                 // Reset winner and boardFull to allow continued play
@@ -580,7 +586,7 @@ class UIManager {
                 const gameData = data.game;
                 
                 // Update the board state to the current move
-                this.gameState.board = gameData.current_state.board;
+                this.gameState.board = this.normalizeBoard(gameData.current_state.board);
                 
                 // Set the current move number based on the current_move_index
                 const currentMoveIndex = gameData.current_move_index || gameData.moves.length;
@@ -593,7 +599,7 @@ class UIManager {
                 console.log(`Snapshot restore: ${this.gameState.moveNumber - 1}/${this.gameState.totalMoves}`);
                 
                 // Critical: Update next_to_move from the server response
-                this.gameState.next_to_move = gameData.current_state.next_to_move;
+                this.gameState.next_to_move = this.normalizeToken(gameData.current_state.next_to_move);
                 console.log("Next to move after snapshot restore:", this.gameState.next_to_move);
                 
                 // Reset winner and boardFull to allow continued play
