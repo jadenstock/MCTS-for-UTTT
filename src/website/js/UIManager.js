@@ -558,11 +558,12 @@ class UIManager {
         moves.slice(0, 9).forEach(move => {
             const board = parseInt(move[0][0]);
             const cell = parseInt(move[0][1]);
-            const score = parseFloat(move[1]);
+            const score = Number(move[1]);
+            const hasScore = Number.isFinite(score);
             const rollouts = move.length > 2 ? parseInt(move[2]) : null;
             this.movesElement.innerHTML +=
                 `B${board + 1}C${cell + 1}\t\t` +
-                `score: ${score.toFixed(5)}` +
+                `score: ${hasScore ? score.toFixed(5) : 'N/A'}` +
                 `${Number.isInteger(rollouts) ? ` | rollouts: ${rollouts}` : ''}<br>`;
         });
     }

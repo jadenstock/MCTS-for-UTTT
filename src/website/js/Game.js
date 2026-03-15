@@ -13,7 +13,6 @@ class Game {
         window.updateSlider = (slideAmount) => {
             this.uiManager.updateComputeTime();
         };
-        this.ensureDescriptiveGameId();
         this.uiManager.updateGameIdLabel(this.gameState.gameId);
     }
 
@@ -149,8 +148,9 @@ class Game {
         this.uiManager.updateGameStatus();
         this.uiManager.updateMoveHistoryDisplay();
 
-        // Save the game state if we have a game ID
+        // Create an ID only once the first real move has been made.
         this.ensureDescriptiveGameId();
+        // Save the game state if we have a game ID
         if (this.gameState.gameId) {
             try {
                 console.log("Sending move to server:", {
@@ -241,7 +241,7 @@ class Game {
 
     reset() {
         this.gameState.reset();
-        this.ensureDescriptiveGameId(true);
+        this.uiManager.updateGameIdLabel(this.gameState.gameId);
         this.uiManager.reset();
         this.uiManager.renderBoard();
     }

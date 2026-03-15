@@ -1,6 +1,6 @@
 class GameState {
     constructor() {
-        this.gameId = crypto.randomUUID();
+        this.gameId = null;
         this.board = [
             ["", "", "", "", "", "", "", "", ""],
             ["", "", "", "", "", "", "", "", ""],
@@ -126,7 +126,7 @@ class GameState {
     }
 
     reset() {
-        this.gameId = crypto.randomUUID();
+        this.gameId = null;
         this.board = Array(9).fill().map(() => Array(9).fill(""));
         this.moveNumber = 1;
         this.totalMoves = 0;

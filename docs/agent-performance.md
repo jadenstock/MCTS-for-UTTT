@@ -14,6 +14,7 @@ This document tracks observed performance, hypotheses, and next experiments for 
 
 - `default` (baseline MCTS)
 - `pragmatic_v1` (tactical/heuristic revision)
+- `graph_puct_v1` (PUCT + transposition-table graph search)
 
 ## Results Snapshot (2026-03-14)
 
@@ -46,3 +47,13 @@ This document tracks observed performance, hypotheses, and next experiments for 
 2. Compare side-adjusted win rate (X/O split), not only total wins.
 3. Tag losses by blunder class (missed block, failed board conversion, send-to-losing board).
 4. Add Elo tracking over all persisted benchmark games.
+
+## New Family Notes (2026-03-14)
+
+- `graph_puct_v1` introduces two algorithmic changes:
+  - PUCT selection with heuristic move priors.
+  - Transposition-table graph search that reuses stats across repeated states.
+- Smoke run (`games=4`, `compute_time=1`, `node_limit=80`, `opening_random_plies=1`) vs `default`:
+  - `graph_puct_v1`: 3 wins
+  - `default`: 1 win
+  - draws: 0
