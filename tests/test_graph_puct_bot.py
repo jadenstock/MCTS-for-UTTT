@@ -38,6 +38,19 @@ class TestGraphPUCTBot(unittest.TestCase):
         self.assertEqual(len(rollouts), 9)
         self.assertTrue(all(r >= 1 for r in rollouts))
 
+    def test_graph_puct_uses_exact_endgame_solver_under_threshold(self):
+        draw_board = ["x", "o", "x", "x", "o", "o", "o", "x", "x"]
+        board = [list(draw_board) for _ in range(9)]
+        board[0] = ["", "", "x", "x", "o", "o", "o", "x", "x"]
+        game = make_game(board, [(4, 0, "x")])  # Forces O to board 0 where two moves are legal.
+
+        bot = get_bot("graph_puct_v1")
+        result = bot.choose_move(game, SearchBudget(max_seconds=2, max_nodes=5), metadata=True, verbose=False)
+        self.assertIsNotNone(result)
+        metadata = result[2]
+        self.assertEqual(metadata.get("search_type"), "exact_endgame")
+        self.assertEqual(len(metadata.get("moves", [])), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

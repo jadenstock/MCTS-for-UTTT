@@ -5,6 +5,7 @@ GRAPH_PUCT_PRESETS = {
     GRAPH_PUCT_BOT_ID: {
         "c_puct": 1.4,
         "rollout_depth": 6,
+        "exact_endgame_threshold": 10,
         "ucb_constant": 1.2,
         "base_potential": 0.18,
         "line_exponent": 1.6,
@@ -28,4 +29,3 @@ GRAPH_PUCT_PRESETS = {
 
 def get_preset(bot_id: str):
     return dict(GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID])
-

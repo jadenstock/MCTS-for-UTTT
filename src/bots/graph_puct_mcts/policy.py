@@ -9,6 +9,7 @@ class GraphPUCTPolicy:
         self.config = dict(config)
         self.rollout_depth = int(self.config.get("rollout_depth", 6))
         self.c_puct = float(self.config.get("c_puct", 1.4))
+        self.exact_endgame_threshold = int(self.config.get("exact_endgame_threshold", -1))
 
     def evaluate(self, game, player):
         return evaluate_game_state(game.board, player, self.config)
