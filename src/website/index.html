@@ -41,6 +41,16 @@
                     </div>
                     <p id="game-id-label" class="panel-subtitle"></p>
                     <div class="game-board"></div>
+                    <div class="panel history-controls">
+                        <h3>Move History</h3>
+                        <div class="move-navigation">
+                            <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First</button>
+                            <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Prev</button>
+                            <span id="current-move-display">Move: 0/0</span>
+                            <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
+                            <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Latest</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -73,17 +83,6 @@
             </section>
 
             <section class="lower-grid">
-                <div class="panel history-controls">
-                    <h3>Move History</h3>
-                    <div class="move-navigation">
-                        <button id="first-move-btn" onclick="game.uiManager.navigateToMove(0)">First</button>
-                        <button id="prev-move-btn" onclick="game.uiManager.navigateToPreviousMove()">Prev</button>
-                        <span id="current-move-display">Move: 0/0</span>
-                        <button id="next-move-btn" onclick="game.uiManager.navigateToNextMove()">Next</button>
-                        <button id="last-move-btn" onclick="game.uiManager.navigateToLastMove()">Latest</button>
-                    </div>
-                </div>
-
                 <div class="panel snapshot-controls">
                     <h3>Snapshots</h3>
                     <div class="snapshot-actions">

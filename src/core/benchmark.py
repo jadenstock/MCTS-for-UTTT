@@ -42,6 +42,7 @@ def _play_game(
     storage=None,
     game_id=None,
     capture_metadata=False,
+    progress_log_interval_moves=0,
 ):
     rng = random.Random(seed)
     game = Game()
@@ -67,6 +68,12 @@ def _play_game(
         game.make_move(board_idx, cell_idx, game.next_to_move)
         if storage is not None and game_id is not None:
             storage.save_game(game_id, game, move_metadata)
+        if progress_log_interval_moves and len(game.move_stack) % int(progress_log_interval_moves) == 0:
+            print(
+                f"progress game_id={game_id or 'unsaved'} moves={len(game.move_stack)} "
+                f"next={game.next_to_move}",
+                flush=True,
+            )
 
     if game.board.winner == "x":
         return "x", len(game.move_stack)
@@ -103,6 +110,7 @@ def run_benchmark(
     elo_file="data/elo_ratings.json",
     elo_k_factor=32.0,
     elo_tiers=DEFAULT_TIERS,
+    progress_log_interval_moves=0,
 ):
     # agent_a plays first on even games, second on odd games.
     x_wins = 0
@@ -144,6 +152,7 @@ def run_benchmark(
             storage=storage,
             game_id=game_id,
             capture_metadata=save_metadata,
+            progress_log_interval_moves=progress_log_interval_moves,
         )
         total_moves += move_count
         if save_games and game_id:
@@ -194,7 +203,7 @@ def run_benchmark(
                 f"{agent_b}={update.new_b:.1f}"
             )
 
-        print(f"game={idx+1}/{games} winner={winner} result={result} moves={move_count}{elo_summary}")
+        print(f"game={idx+1}/{games} winner={winner} result={result} moves={move_count}{elo_summary}", flush=True)
 
     return BenchmarkResult(
         games=games,
@@ -220,6 +229,12 @@ def main():
     parser.add_argument("--disable-elo", action="store_true", help="Do not update Elo ratings")
     parser.add_argument("--elo-file", default="data/elo_ratings.json", help="JSON file for Elo ratings")
     parser.add_argument("--elo-k-factor", type=float, default=32.0, help="Elo K-factor")
+    parser.add_argument(
+        "--progress-log-interval-moves",
+        type=int,
+        default=0,
+        help="Print an in-game progress line every N moves (0 disables).",
+    )
     args = parser.parse_args()
 
     result = run_benchmark(
@@ -236,6 +251,7 @@ def main():
         update_elo=not args.disable_elo,
         elo_file=args.elo_file,
         elo_k_factor=args.elo_k_factor,
+        progress_log_interval_moves=args.progress_log_interval_moves,
     )
 
     print("\n=== Benchmark Summary ===")

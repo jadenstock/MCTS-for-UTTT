@@ -55,3 +55,71 @@ def benchmark(c, agent_a="default", agent_b="aggressive", games=20, compute_time
         f"--seed {seed}",
         env=env,
     )
+
+
+@task
+def benchmark_enqueue(
+    c,
+    agent_a="default",
+    agent_b="graph_puct_v1",
+    games=1,
+    compute_time=1,
+    node_limit=200,
+    opening_random_plies=2,
+    seed=42,
+    save_dir="data/bot_games",
+    progress_log_interval_moves=5,
+):
+    """Enqueue one benchmark job into the local queue."""
+    env = {"PYTHONPATH": "src"}
+    c.run(
+        "python -m core.benchmark_jobs "
+        "enqueue "
+        f"--agent-a {agent_a} "
+        f"--agent-b {agent_b} "
+        f"--games {games} "
+        f"--compute-time {compute_time} "
+        f"--node-limit {node_limit} "
+        f"--opening-random-plies {opening_random_plies} "
+        f"--seed {seed} "
+        f"--save-dir {save_dir} "
+        f"--progress-log-interval-moves {progress_log_interval_moves}",
+        env=env,
+    )
+
+
+@task
+def benchmark_jobs(c, status="", limit=100):
+    """List benchmark queue jobs."""
+    env = {"PYTHONPATH": "src"}
+    status_arg = f"--status {status} " if status else ""
+    c.run(
+        "python -m core.benchmark_jobs "
+        f"list {status_arg}"
+        f"--limit {limit}",
+        env=env,
+    )
+
+
+@task
+def benchmark_cancel(c, job_id):
+    """Cancel a queued or running benchmark job by id."""
+    env = {"PYTHONPATH": "src"}
+    c.run(
+        "python -m core.benchmark_jobs "
+        f"cancel --job-id {job_id}",
+        env=env,
+    )
+
+
+@task
+def benchmark_runner(c, workers=3, poll_interval=1.0, status_interval=10.0):
+    """Run benchmark queue workers until interrupted."""
+    env = {"PYTHONPATH": "src"}
+    c.run(
+        "python -m core.benchmark_runner "
+        f"--workers {workers} "
+        f"--poll-interval {poll_interval} "
+        f"--status-interval {status_interval}",
+        env=env,
+    )

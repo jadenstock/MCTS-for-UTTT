@@ -237,8 +237,10 @@ class UIManager {
                     <div>${game.source} | x=${game.agent_x || "?"} o=${game.agent_o || "?"}</div>
                     <div>status=${status}</div>
                     <div>nodes=${game.node_limit ?? "n/a"}</div>
-                    <button type="button" class="view-game-btn">View</button>
-                    <button type="button" class="delete-game-btn">Delete</button>
+                    <div class="game-row-actions">
+                        <button type="button" class="view-game-btn">View</button>
+                        <button type="button" class="delete-game-btn">Delete</button>
+                    </div>
                 `;
                 row.querySelector(".view-game-btn").addEventListener("click", async () => {
                     this.followLiveGame(game.in_progress ? game.game_id : null);
@@ -388,6 +390,22 @@ class UIManager {
             // Reset winner and boardFull to allow continued play
             this.gameState.winner = gameData.current_state.winner ? this.normalizeToken(gameData.current_state.winner) : null;
             this.gameState.boardFull = !!gameData.current_state.winner;
+
+            const nodeLimitEl = document.getElementById("nodeLimit");
+            if (nodeLimitEl) {
+                const benchmarkNodeLimit = gameData?.benchmark_context?.node_limit;
+                const parsedLimit = parseInt(benchmarkNodeLimit, 10);
+                if (Number.isFinite(parsedLimit)) {
+                    nodeLimitEl.value = parsedLimit;
+                }
+                const isBotArchiveGame =
+                    source === "bot" ||
+                    Boolean(gameData?.benchmark_context?.agent_x || gameData?.benchmark_context?.agent_o);
+                nodeLimitEl.disabled = isBotArchiveGame;
+                nodeLimitEl.title = isBotArchiveGame
+                    ? "Node budget is locked to this archived bot game's benchmark settings."
+                    : "";
+            }
 
             // Update game name if it exists
             if (gameData.name) {
@@ -598,10 +616,10 @@ class UIManager {
     updateGameStatus() {
         this.winnerElement.className = "";
         if (this.gameState.winner === GAME_CONSTANTS.PLAYERS.HUMAN) {
-            this.winnerElement.innerText = "Winner is player!!";
+            this.winnerElement.innerText = "Winner: X";
             this.winnerElement.classList.add("playerWin");
         } else if (this.gameState.winner === GAME_CONSTANTS.PLAYERS.COMPUTER) {
-            this.winnerElement.innerText = "Winner is computer";
+            this.winnerElement.innerText = "Winner: O";
             this.winnerElement.classList.add("computerWin");
         } else if (this.gameState.boardFull) {
             this.winnerElement.innerText = "Draw!";
@@ -653,6 +671,11 @@ class UIManager {
         this.lastMoveElement.dataset.lastCell = -1;
         this.gameNameInput.value = "";  // Reset game name input
         this.snapshotNameInput.value = ""; // Reset snapshot name input
+        const nodeLimitEl = document.getElementById("nodeLimit");
+        if (nodeLimitEl) {
+            nodeLimitEl.disabled = false;
+            nodeLimitEl.title = "";
+        }
         
         // Reset move history display
         this.currentMoveDisplay.textContent = "Move: 0/0";

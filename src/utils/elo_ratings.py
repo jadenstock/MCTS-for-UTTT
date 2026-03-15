@@ -1,4 +1,5 @@
 import json
+import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +10,7 @@ from bots.registry import list_bot_ids
 DEFAULT_ELO = 1200.0
 DEFAULT_K_FACTOR = 32.0
 DEFAULT_TIERS = (200, 500, 800)
+_ELO_FILE_LOCK = threading.Lock()
 
 
 @dataclass
@@ -70,6 +72,23 @@ class EloRatings:
         self._atomic_save(data)
         return data
 
+    def _reload_data(self) -> Dict:
+        if not self.file_path.exists():
+            return self._load_or_init()
+        with open(self.file_path) as f:
+            data = json.load(f)
+
+        tiers = data.setdefault("tiers", {})
+        for tier in self.tiers:
+            tiers.setdefault(str(tier), self._empty_tier())
+        for tier_data in tiers.values():
+            agents = tier_data.setdefault("agents", {})
+            for bot_id in list_bot_ids():
+                agents.setdefault(bot_id, self.default_rating)
+            tier_data.setdefault("games_played", 0)
+            tier_data.setdefault("updated_at", None)
+        return data
+
     def _atomic_save(self, data: Dict) -> None:
         temp_path = self.file_path.with_suffix(".tmp")
         with open(temp_path, "w") as f:
@@ -91,33 +110,36 @@ class EloRatings:
         if score_a not in (0.0, 0.5, 1.0):
             raise ValueError("score_a must be 0.0 (loss), 0.5 (draw), or 1.0 (win)")
 
-        bucket = self._tier_bucket(tier)
-        agents = bucket["agents"]
-        old_a = float(agents.setdefault(agent_a, self.default_rating))
-        old_b = float(agents.setdefault(agent_b, self.default_rating))
+        with _ELO_FILE_LOCK:
+            # Reload each time so concurrent workers don't clobber each other.
+            self._data = self._reload_data()
+            bucket = self._tier_bucket(tier)
+            agents = bucket["agents"]
+            old_a = float(agents.setdefault(agent_a, self.default_rating))
+            old_b = float(agents.setdefault(agent_b, self.default_rating))
 
-        exp_a = self._expected_score(old_a, old_b)
-        exp_b = self._expected_score(old_b, old_a)
-        score_b = 1.0 - score_a
+            exp_a = self._expected_score(old_a, old_b)
+            exp_b = self._expected_score(old_b, old_a)
+            score_b = 1.0 - score_a
 
-        new_a = old_a + self.k_factor * (score_a - exp_a)
-        new_b = old_b + self.k_factor * (score_b - exp_b)
+            new_a = old_a + self.k_factor * (score_a - exp_a)
+            new_b = old_b + self.k_factor * (score_b - exp_b)
 
-        agents[agent_a] = new_a
-        agents[agent_b] = new_b
-        bucket["games_played"] = int(bucket.get("games_played", 0)) + 1
-        bucket["updated_at"] = datetime.now().isoformat()
+            agents[agent_a] = new_a
+            agents[agent_b] = new_b
+            bucket["games_played"] = int(bucket.get("games_played", 0)) + 1
+            bucket["updated_at"] = datetime.now().isoformat()
 
-        self._atomic_save(self._data)
-        return EloUpdate(
-            tier=int(tier),
-            agent_a=agent_a,
-            agent_b=agent_b,
-            old_a=old_a,
-            old_b=old_b,
-            new_a=new_a,
-            new_b=new_b,
-        )
+            self._atomic_save(self._data)
+            return EloUpdate(
+                tier=int(tier),
+                agent_a=agent_a,
+                agent_b=agent_b,
+                old_a=old_a,
+                old_b=old_b,
+                new_a=new_a,
+                new_b=new_b,
+            )
 
     def leaderboard(self, tier: int) -> Tuple[Tuple[str, float], ...]:
         bucket = self._tier_bucket(tier)
