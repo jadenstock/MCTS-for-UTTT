@@ -124,17 +124,20 @@ def calculate_square_importance(board, config):
 
 def evaluate_game_state(board, player, config):
     opponent = "o" if player == "x" else "x"
+    draw_value = float(config.get("terminal_draw_value", 0.5))
     if board.winner == player:
         return 1.0
     if board.winner == opponent:
         return 0.0
+    if board.winner == "draw":
+        return draw_value
 
     has_playable_cells = any(
         mini_board.winner == "" and any(cell == "" for cell in mini_board.cells)
         for mini_board in board.boards
     )
-    if not has_playable_cells:
-        return 0.5
+    if (not has_playable_cells) or (hasattr(board, "has_viable_big_board_line") and not board.has_viable_big_board_line()):
+        return draw_value
 
     global_score_weight = float(config.get("global_score_weight", 0.65))
     strategic_score_weight = float(config.get("strategic_score_weight", 0.35))
@@ -168,4 +171,3 @@ def evaluate_game_state(board, player, config):
 
     final_score = global_score_weight * global_score + strategic_score_weight * strategic_score
     return max(0.0, min(final_max_score, final_score))
-

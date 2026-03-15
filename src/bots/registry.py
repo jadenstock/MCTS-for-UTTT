@@ -33,7 +33,10 @@ def list_bot_summaries():
         else:
             cfg = BASELINE_PRESETS[bot_id]
             family = "baseline_mcts"
-            notes = "Baseline family preset (same core algorithm, different parameter tuning)."
+            if bot_id == "draw_hater":
+                notes = "Baseline preset that penalizes drawn terminal outcomes to push risk-taking."
+            else:
+                notes = "Baseline family preset (same core algorithm, different parameter tuning)."
         summaries.append({
             "bot_id": bot_id,
             "family": family,

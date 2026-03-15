@@ -40,8 +40,11 @@ class TestGraphPUCTBot(unittest.TestCase):
 
     def test_graph_puct_uses_exact_endgame_solver_under_threshold(self):
         draw_board = ["x", "o", "x", "x", "o", "o", "o", "x", "x"]
+        x_won_board = ["x", "x", "x", "o", "o", "x", "o", "x", "o"]
         board = [list(draw_board) for _ in range(9)]
         board[0] = ["", "", "x", "x", "o", "o", "o", "x", "x"]
+        board[4] = list(x_won_board)
+        board[8] = list(x_won_board)
         game = make_game(board, [(4, 0, "x")])  # Forces O to board 0 where two moves are legal.
 
         bot = get_bot("graph_puct_v1")

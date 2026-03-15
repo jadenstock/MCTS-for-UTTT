@@ -3,6 +3,19 @@ import itertools
 from utils.utils import three_in_a_row, load_agent_config
 from utils.game_score_utils import score_board, calculate_square_importance
 
+
+WIN_LINES = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+]
+
+
 class MiniBoard:
     def __init__(self):
         self.cells = ["" for _ in range(9)]
@@ -25,7 +38,37 @@ class Board:
 
     def evaluate_winner(self):
         boards = [b.winner for b in self.boards]
-        return three_in_a_row(boards)
+        winner = three_in_a_row(boards)
+        if winner:
+            return winner
+
+        if not self.has_viable_big_board_line():
+            return "draw"
+
+        has_playable_cells = any(
+            mini_board.winner == "" and any(cell == "" for cell in mini_board.cells)
+            for mini_board in self.boards
+        )
+        if not has_playable_cells:
+            return "draw"
+
+        return ""
+
+    def _global_cell_status(self, index):
+        mini_board = self.boards[index]
+        if mini_board.winner in ("x", "o"):
+            return mini_board.winner
+        if any(cell == "" for cell in mini_board.cells):
+            return ""
+        return "d"
+
+    def has_viable_big_board_line(self):
+        global_status = [self._global_cell_status(i) for i in range(9)]
+        for player in ("x", "o"):
+            for line in WIN_LINES:
+                if all(global_status[i] in ("", player) for i in line):
+                    return True
+        return False
 
     def score(self, player, agent_id='default'):
         """
@@ -43,12 +86,14 @@ class Board:
             return 1.0
         if self.winner == opponent:
             return 0.0
+        if self.winner == "draw":
+            return 0.5
         # Terminal draw: no global winner and no playable cells left.
         has_playable_cells = any(
             mini_board.winner == "" and any(cell == "" for cell in mini_board.cells)
             for mini_board in self.boards
         )
-        if not has_playable_cells:
+        if (not has_playable_cells) or (not self.has_viable_big_board_line()):
             return 0.5
 
         # Load additional configuration parameters for board scoring

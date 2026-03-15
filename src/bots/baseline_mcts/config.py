@@ -110,9 +110,27 @@ BASELINE_PRESETS = {
         "ucb_constant": 1.414,
         "rollout_depth": 6,
     },
+    "draw_hater": {
+        "base_potential": 0.15,
+        "line_exponent": 1.5,
+        "max_multiplier": 1.5,
+        "weight_best": 0.6,
+        "weight_path": 0.4,
+        "max_score": 0.9,
+        "importance_win_weight": 2.0,
+        "importance_develop_weight": 0.3,
+        "importance_fresh_weight": 0.1,
+        "global_score_weight": 0.6,
+        "strategic_score_weight": 0.4,
+        "offensive_weight": 0.5,
+        "defensive_weight": 0.5,
+        "final_max_score": 0.9,
+        "terminal_draw_value": 0.35,
+        "ucb_constant": 1.414,
+        "rollout_depth": 6,
+    },
 }
 
 
 def get_preset(bot_id: str):
     return dict(BASELINE_PRESETS.get(bot_id, BASELINE_PRESETS[DEFAULT_BOT_ID]))
-

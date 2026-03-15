@@ -35,7 +35,8 @@ class SimulationTreeNode:
         for move, child in self.children.items():
             mean_root_score = child.total_score / float(child.number_of_plays)
             exploit = mean_root_score if maximize_root_score else (1.0 - mean_root_score)
-            explore = 2 * c * math.sqrt(2 * math.log(self.number_of_plays) / float(child.number_of_plays))
+            # Standard UCB1 exploration pressure (less aggressive than prior scaling).
+            explore = c * math.sqrt(2 * math.log(self.number_of_plays) / float(child.number_of_plays))
             ucb = exploit + explore
             if ucb > best_score:
                 best_score = ucb

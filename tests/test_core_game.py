@@ -39,7 +39,21 @@ class TestCoreGame(unittest.TestCase):
             mini_board.cells = list(drawn_miniboard)
         game.evaluate_winners()
 
-        self.assertEqual(game.board.winner, "")
+        self.assertEqual(game.board.winner, "draw")
+        self.assertEqual(game.legal_moves(), [])
+        self.assertAlmostEqual(game.board.score("x"), 0.5, places=6)
+        self.assertAlmostEqual(game.board.score("o"), 0.5, places=6)
+
+    def test_game_is_draw_when_big_board_three_in_row_is_impossible(self):
+        board = [["" for _ in range(9)] for _ in range(9)]
+        drawn_miniboard = ["x", "o", "x", "x", "o", "o", "o", "x", "x"]
+        board[0] = list(drawn_miniboard)
+        board[4] = list(drawn_miniboard)
+        board[8] = list(drawn_miniboard)
+
+        game = make_game(board, [])
+
+        self.assertEqual(game.board.winner, "draw")
         self.assertEqual(game.legal_moves(), [])
         self.assertAlmostEqual(game.board.score("x"), 0.5, places=6)
         self.assertAlmostEqual(game.board.score("o"), 0.5, places=6)

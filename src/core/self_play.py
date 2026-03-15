@@ -57,7 +57,7 @@ def run_self_play(agent1, agent2, compute_time):
             print(str(game))
 
     # Determine the game result.
-    if game.board.winner:
+    if game.board.winner and game.board.winner != "draw":
         result = f"{game.board.winner} wins"
     else:
         result = "draw"

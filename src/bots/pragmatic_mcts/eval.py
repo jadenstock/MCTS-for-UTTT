@@ -13,8 +13,10 @@ def _count_open_twos(cells, player):
 
 def evaluate_game_state(board, player, config):
     base_score = baseline_evaluate_game_state(board, player, config)
-
     opponent = "o" if player == "x" else "x"
+    if board.winner in (player, opponent, "draw"):
+        return base_score
+
     player_won_boards = sum(1 for mini_board in board.boards if mini_board.winner == player)
     opponent_won_boards = sum(1 for mini_board in board.boards if mini_board.winner == opponent)
 
@@ -35,4 +37,3 @@ def evaluate_game_state(board, player, config):
 
 def score_local(board, player, config):
     return score_local_board(board, player, config)
-
