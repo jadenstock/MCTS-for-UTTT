@@ -16,6 +16,7 @@ from utils.game_storage import GameStorage
 app = Flask(__name__)
 storage = GameStorage(data_dir="data/games")
 bot_storage = GameStorage(data_dir="data/bot_games")
+benchmark_storage = GameStorage(data_dir="data/benchmark_games")
 
 
 @app.route('/api/makemove/', methods=['POST', 'OPTIONS'])
@@ -88,7 +89,14 @@ def list_games():
 def list_bot_games():
     in_progress = request.args.get('in_progress', 'false').lower() == 'true'
     games = bot_storage.list_games(in_progress_only=in_progress)
-    return jsonify(games)
+    benchmark_games = benchmark_storage.list_games(in_progress_only=in_progress)
+    tagged_main_games = [g for g in storage.list_games(in_progress_only=in_progress) if g.get("is_bot_game")]
+    merged = {g["game_id"]: g for g in games}
+    for game in benchmark_games:
+        merged[game["game_id"]] = game
+    for game in tagged_main_games:
+        merged[game["game_id"]] = game
+    return jsonify(list(merged.values()))
 
 
 @app.route('/api/bots', methods=['GET'])
@@ -106,12 +114,36 @@ def get_game(game_id):
     return jsonify({"error": "Game not found"}), 404
 
 
+@app.route('/api/games/<game_id>', methods=['DELETE', 'OPTIONS'])
+@flask_cors.cross_origin()
+def delete_game(game_id):
+    if storage.delete_game(game_id):
+        return jsonify({"success": True})
+    return jsonify({"error": "Game not found"}), 404
+
+
 @app.route('/api/bot-games/<game_id>', methods=['GET'])
 @flask_cors.cross_origin()
 def get_bot_game(game_id):
     game_data = bot_storage.load_game(game_id)
+    if not game_data:
+        game_data = benchmark_storage.load_game(game_id)
+    if not game_data:
+        game_data = storage.load_game(game_id)
     if game_data:
         return jsonify(game_data)
+    return jsonify({"error": "Bot game not found"}), 404
+
+
+@app.route('/api/bot-games/<game_id>', methods=['DELETE', 'OPTIONS'])
+@flask_cors.cross_origin()
+def delete_bot_game(game_id):
+    if bot_storage.delete_game(game_id):
+        return jsonify({"success": True, "source": "bot_games"})
+    if benchmark_storage.delete_game(game_id):
+        return jsonify({"success": True, "source": "benchmark_games"})
+    if storage.delete_game(game_id):
+        return jsonify({"success": True, "source": "games"})
     return jsonify({"error": "Bot game not found"}), 404
 
 
@@ -156,6 +188,10 @@ def restore_to_move(game_id, move_number):
 def restore_bot_game_to_move(game_id, move_number):
     try:
         restored_data = bot_storage.restore_to_move(game_id, move_number)
+        if not restored_data:
+            restored_data = benchmark_storage.restore_to_move(game_id, move_number)
+        if not restored_data:
+            restored_data = storage.restore_to_move(game_id, move_number)
         if restored_data:
             return jsonify({"success": True, "game": restored_data})
         return jsonify({"error": "Failed to restore bot game"}), 400

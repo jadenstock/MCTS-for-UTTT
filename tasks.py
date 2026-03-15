@@ -41,7 +41,7 @@ def validate_config(c, agent="default"):
 
 
 @task
-def benchmark(c, agent_a="default", agent_b="aggressive", games=20, compute_time=60, node_limit=750, opening_random_plies=2, seed=42):
+def benchmark(c, agent_a="default", agent_b="aggressive", games=20, compute_time=60, node_limit=200, opening_random_plies=2, seed=42):
     """Run reproducible self-play benchmark between two agents."""
     env = {"PYTHONPATH": "src"}
     c.run(

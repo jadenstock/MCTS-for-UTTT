@@ -68,7 +68,7 @@ Note: API tests that import Flask are auto-skipped if Flask is unavailable in th
 Reproducible self-play benchmark task:
 
 ```bash
-invoke benchmark --agent-a default --agent-b aggressive --games 20 --node-limit 750 --opening-random-plies 2 --seed 42
+invoke benchmark --agent-a default --agent-b graph_puct_v1 --games 20 --node-limit 200 --opening-random-plies 2 --seed 42
 ```
 
 Equivalent CLI:
@@ -76,10 +76,10 @@ Equivalent CLI:
 ```bash
 PYTHONPATH=src python -m core.benchmark \
   --agent-a default \
-  --agent-b aggressive \
+  --agent-b graph_puct_v1 \
   --games 20 \
   --compute-time 60 \
-  --node-limit 750 \
+  --node-limit 200 \
   --opening-random-plies 2 \
   --seed 42
 ```
@@ -87,6 +87,8 @@ PYTHONPATH=src python -m core.benchmark \
 Why `node-limit` is used in benchmark mode:
 - It reduces wall-clock jitter when comparing two agent versions.
 - Gameplay can still use time-based thinking budgets in the UI.
+- Elo tracking is tiered by node budget (`200`, `500`, `800`) with all agents starting at `1200`.
+- Use `--disable-elo` when running non-tier budgets for ad-hoc experiments.
 
 ## Project Structure
 

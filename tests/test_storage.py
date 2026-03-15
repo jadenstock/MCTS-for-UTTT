@@ -40,6 +40,16 @@ class TestGameStorage(unittest.TestCase):
             self.assertEqual(data["moves"][0]["player"], "x")
             self.assertEqual(data["moves"][1]["player"], "o")
 
+    def test_delete_game_removes_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            storage = GameStorage(data_dir=tmpdir)
+            game = Game()
+            storage.save_game("g_delete", game)
+
+            self.assertTrue(storage.delete_game("g_delete"))
+            self.assertIsNone(storage.load_game("g_delete"))
+            self.assertFalse(storage.delete_game("g_delete"))
+
 
 if __name__ == "__main__":
     unittest.main()

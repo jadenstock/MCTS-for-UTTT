@@ -237,13 +237,40 @@ class UIManager {
                     <div>${game.source} | x=${game.agent_x || "?"} o=${game.agent_o || "?"}</div>
                     <div>status=${status}</div>
                     <div>nodes=${game.node_limit ?? "n/a"}</div>
-                    <button type="button">View</button>
+                    <button type="button" class="view-game-btn">View</button>
+                    <button type="button" class="delete-game-btn">Delete</button>
                 `;
-                row.querySelector("button").addEventListener("click", async () => {
+                row.querySelector(".view-game-btn").addEventListener("click", async () => {
                     this.followLiveGame(game.in_progress ? game.game_id : null);
                     this.activeGameSource = game.source;
                     await this.loadGame(game.game_id, { autoComputerMove: false, source: game.source });
                     this.switchTab("play");
+                });
+                row.querySelector(".delete-game-btn").addEventListener("click", async () => {
+                    const confirmed = window.confirm(`Delete game ${game.game_id}?`);
+                    if (!confirmed) {
+                        return;
+                    }
+                    try {
+                        const deleter = game.source === "bot"
+                            ? this.apiClient.deleteBotGame.bind(this.apiClient)
+                            : this.apiClient.deleteGame.bind(this.apiClient);
+                        const { ok, data } = await deleter(game.game_id);
+                        if (!ok) {
+                            throw new Error(data.error || "Failed to delete game");
+                        }
+                        if (this.liveFollowGameId === game.game_id) {
+                            this.liveFollowGameId = null;
+                        }
+                        if (this.gameState.gameId === game.game_id) {
+                            this.reset();
+                        }
+                        await this.updateSavedGamesDropdown();
+                        await this.updateBotGamesList();
+                    } catch (error) {
+                        console.error("Failed to delete game:", error);
+                        alert(`Failed to delete game: ${error.message}`);
+                    }
                 });
                 this.botGamesListElement.appendChild(row);
             });
@@ -596,13 +623,13 @@ class UIManager {
         }
         
         if (this.gameState.next_to_move === GAME_CONSTANTS.PLAYERS.HUMAN) {
-            this.turnIndicator.textContent = "Your Turn (X)";
+            this.turnIndicator.textContent = "X's turn";
             this.turnIndicator.style.color = "blue";
             if (this.triggerComputerMoveBtn) {
                 this.triggerComputerMoveBtn.disabled = true;
             }
         } else {
-            this.turnIndicator.textContent = "Computer's Turn (O)";
+            this.turnIndicator.textContent = "O's turn";
             this.turnIndicator.style.color = "red";
             if (this.triggerComputerMoveBtn) {
                 this.triggerComputerMoveBtn.disabled = false;

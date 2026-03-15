@@ -9,6 +9,7 @@ from pathlib import Path
 from ai.mcts import evaluate_next_move
 from core.game import Game
 from utils.game_storage import GameStorage
+from utils.elo_ratings import EloRatings, DEFAULT_TIERS
 
 
 @dataclass
@@ -98,6 +99,10 @@ def run_benchmark(
     save_games=False,
     save_dir="data/benchmark_games",
     save_metadata=False,
+    update_elo=True,
+    elo_file="data/elo_ratings.json",
+    elo_k_factor=32.0,
+    elo_tiers=DEFAULT_TIERS,
 ):
     # agent_a plays first on even games, second on odd games.
     x_wins = 0
@@ -106,6 +111,14 @@ def run_benchmark(
     total_moves = 0
     storage = GameStorage(data_dir=save_dir) if save_games else None
     session_tag = datetime.now().strftime("%Y%m%d_%H%M%S")
+    elo = None
+    if update_elo:
+        elo = EloRatings(file_path=elo_file, tiers=elo_tiers, k_factor=elo_k_factor)
+        if node_limit not in set(elo.tiers):
+            raise ValueError(
+                f"node_limit={node_limit} is not a tracked Elo tier. "
+                f"Use one of: {', '.join(map(str, elo.tiers))}, or disable Elo updates."
+            )
 
     for idx in range(games):
         if idx % 2 == 0:
@@ -160,12 +173,28 @@ def run_benchmark(
         # per-agent report for each game
         if winner == "draw":
             result = "draw"
+            score_a = 0.5
         elif (winner == "x" and a_is_x) or (winner == "o" and not a_is_x):
             result = "agent_a_win"
+            score_a = 1.0
         else:
             result = "agent_b_win"
+            score_a = 0.0
 
-        print(f"game={idx+1}/{games} winner={winner} result={result} moves={move_count}")
+        elo_summary = ""
+        if elo is not None:
+            update = elo.update_result(
+                tier=node_limit,
+                agent_a=agent_a,
+                agent_b=agent_b,
+                score_a=score_a,
+            )
+            elo_summary = (
+                f" elo[{node_limit}] {agent_a}={update.new_a:.1f} "
+                f"{agent_b}={update.new_b:.1f}"
+            )
+
+        print(f"game={idx+1}/{games} winner={winner} result={result} moves={move_count}{elo_summary}")
 
     return BenchmarkResult(
         games=games,
@@ -182,12 +211,15 @@ def main():
     parser.add_argument("--agent-b", default="aggressive", help="Agent id for player B")
     parser.add_argument("--games", type=int, default=20, help="Number of games")
     parser.add_argument("--compute-time", type=int, default=60, help="Seconds per move ceiling")
-    parser.add_argument("--node-limit", type=int, default=750, help="Node expansions per move")
+    parser.add_argument("--node-limit", type=int, default=200, help="Node expansions per move")
     parser.add_argument("--opening-random-plies", type=int, default=2, help="Random opening plies per game")
     parser.add_argument("--seed", type=int, default=42, help="Base random seed")
     parser.add_argument("--save-games", action="store_true", help="Persist every benchmark game for analysis")
     parser.add_argument("--save-dir", default="data/bot_games", help="Directory for saved benchmark games")
     parser.add_argument("--save-metadata", action="store_true", help="Save per-move search metadata")
+    parser.add_argument("--disable-elo", action="store_true", help="Do not update Elo ratings")
+    parser.add_argument("--elo-file", default="data/elo_ratings.json", help="JSON file for Elo ratings")
+    parser.add_argument("--elo-k-factor", type=float, default=32.0, help="Elo K-factor")
     args = parser.parse_args()
 
     result = run_benchmark(
@@ -201,6 +233,9 @@ def main():
         save_games=args.save_games,
         save_dir=args.save_dir,
         save_metadata=args.save_metadata,
+        update_elo=not args.disable_elo,
+        elo_file=args.elo_file,
+        elo_k_factor=args.elo_k_factor,
     )
 
     print("\n=== Benchmark Summary ===")

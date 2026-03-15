@@ -13,6 +13,8 @@ const GAME_CONSTANTS = {
         LIST_BOTS: 'http://127.0.0.1:5000/api/bots',
         LOAD_GAME: (gameId) => `http://127.0.0.1:5000/api/games/${gameId}`,
         LOAD_BOT_GAME: (gameId) => `http://127.0.0.1:5000/api/bot-games/${gameId}`,
+        DELETE_GAME: (gameId) => `http://127.0.0.1:5000/api/games/${gameId}`,
+        DELETE_BOT_GAME: (gameId) => `http://127.0.0.1:5000/api/bot-games/${gameId}`,
         UPDATE_GAME_NAME: (gameId) => `http://127.0.0.1:5000/api/games/rename/${gameId}`,
         RESTORE_TO_MOVE: (gameId, moveNumber) => `http://127.0.0.1:5000/api/games/${gameId}/restore/${moveNumber}`,
         RESTORE_BOT_TO_MOVE: (gameId, moveNumber) => `http://127.0.0.1:5000/api/bot-games/${gameId}/restore/${moveNumber}`,

@@ -75,6 +75,18 @@ class GameStorage:
             print(f"Error creating new save file: {e}")
             return False
 
+    def delete_game(self, game_id: str) -> bool:
+        """Delete a saved game file by game_id."""
+        path = self.data_dir / f"{game_id}.json"
+        if not path.exists():
+            return False
+        try:
+            path.unlink()
+            return True
+        except Exception as e:
+            print(f"Error deleting game file {path}: {e}")
+            return False
+
     def load_game(self, game_id: str) -> Optional[Dict[str, Any]]:
         """Load game data by ID"""
         path = self.data_dir / f"{game_id}.json"

@@ -21,6 +21,12 @@ class ApiClient {
         return { ok: response.ok, status: response.status, data };
     }
 
+    async delete(url) {
+        const response = await fetch(url, { method: "DELETE" });
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+    }
+
     requestComputerTurn(payload) {
         return this.post(this.endpoints.MAKE_MOVE, payload);
     }
@@ -71,5 +77,13 @@ class ApiClient {
 
     restoreSnapshot(gameId, snapshotId) {
         return this.post(this.endpoints.RESTORE_SNAPSHOT(gameId, snapshotId));
+    }
+
+    deleteGame(gameId) {
+        return this.delete(this.endpoints.DELETE_GAME(gameId));
+    }
+
+    deleteBotGame(gameId) {
+        return this.delete(this.endpoints.DELETE_BOT_GAME(gameId));
     }
 }
