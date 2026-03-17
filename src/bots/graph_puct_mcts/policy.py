@@ -9,7 +9,12 @@ class GraphPUCTPolicy:
         self.config = dict(config)
         self.rollout_depth = int(self.config.get("rollout_depth", 6))
         self.c_puct = float(self.config.get("c_puct", 1.4))
-        self.exact_endgame_threshold = int(self.config.get("exact_endgame_threshold", -1))
+        self.terminal_draw_value = float(self.config.get("terminal_draw_value", 0.5))
+        self.exact_endgame_legal_cells_threshold = int(self.config.get("exact_endgame_legal_cells_threshold", -1))
+        legacy_empty = int(self.config.get("exact_endgame_threshold", -1))
+        self.exact_endgame_empty_cells_threshold = int(
+            self.config.get("exact_endgame_empty_cells_threshold", legacy_empty)
+        )
 
     def evaluate(self, game, player):
         return evaluate_game_state(game.board, player, self.config)

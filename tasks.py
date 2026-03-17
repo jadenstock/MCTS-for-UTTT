@@ -123,3 +123,16 @@ def benchmark_runner(c, workers=3, poll_interval=1.0, status_interval=10.0):
         f"--status-interval {status_interval}",
         env=env,
     )
+
+
+@task
+def clear_bot_games(c, all_games=False, include_benchmark_dir=True):
+    """Delete in-progress bot game files (or all bot game files)."""
+    env = {"PYTHONPATH": "src"}
+    all_arg = "--all " if all_games else ""
+    include_arg = "--include-benchmark-dir" if include_benchmark_dir else ""
+    c.run(
+        "python -m core.cleanup_bot_games "
+        f"{all_arg}{include_arg}",
+        env=env,
+    )

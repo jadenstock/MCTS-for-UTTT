@@ -26,6 +26,55 @@ GRAPH_PUCT_PRESETS = {
     }
 }
 
+# New immutable variants for Elo tracking experiments.
+GRAPH_PUCT_PRESETS["graph_puct_legal10_draw050_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 10,
+    "terminal_draw_value": 0.5,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal14_draw050_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 14,
+    "terminal_draw_value": 0.5,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal10_draw025_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 10,
+    "terminal_draw_value": 0.25,
+}
+# Practical guidance: around ~10 legal cells is usually safe for exact solve latency.
+GRAPH_PUCT_PRESETS["graph_puct_legal6_draw025_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 6,
+    "terminal_draw_value": 0.25,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal14_draw025_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 14,
+    "terminal_draw_value": 0.25,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal18_draw025_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 18,
+    "terminal_draw_value": 0.25,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal10_draw000_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 10,
+    "terminal_draw_value": 0.0,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal14_draw000_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 14,
+    "terminal_draw_value": 0.0,
+}
+GRAPH_PUCT_PRESETS["graph_puct_legal18_draw000_v2"] = {
+    **GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID],
+    "exact_endgame_legal_cells_threshold": 18,
+    "terminal_draw_value": 0.0,
+}
+
 
 def get_preset(bot_id: str):
-    return dict(GRAPH_PUCT_PRESETS[GRAPH_PUCT_BOT_ID])
+    selected_id = bot_id if bot_id in GRAPH_PUCT_PRESETS else GRAPH_PUCT_BOT_ID
+    return dict(GRAPH_PUCT_PRESETS[selected_id])

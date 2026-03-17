@@ -2,7 +2,7 @@ import math
 import time
 from dataclasses import dataclass, field
 
-from search.exact_endgame import count_empty_cells, solve_root_exact
+from search.exact_endgame import count_empty_cells, count_legal_cells, solve_root_exact
 
 
 DEFAULT_SECONDS_LIMIT = 30
@@ -174,28 +174,43 @@ def run_graph_puct(
     legal = game.legal_moves()
     if not legal:
         return None
-    exact_threshold = int(getattr(policy, "exact_endgame_threshold", -1))
-    if exact_threshold >= 0 and count_empty_cells(game) <= exact_threshold and len(legal) > 1:
+    max_seconds = float(getattr(budget, "max_seconds", DEFAULT_SECONDS_LIMIT))
+    max_nodes = int(getattr(budget, "max_nodes", DEFAULT_NODE_LIMIT))
+    legal_cells_threshold = int(getattr(policy, "exact_endgame_legal_cells_threshold", -1))
+    empty_threshold = int(getattr(policy, "exact_endgame_empty_cells_threshold", -1))
+    draw_value = float(getattr(policy, "terminal_draw_value", 0.5))
+    use_exact = False
+    if legal_cells_threshold >= 0 and count_legal_cells(game) <= legal_cells_threshold and len(legal) > 1:
+        use_exact = True
+    elif legal_cells_threshold < 0 and empty_threshold >= 0 and count_empty_cells(game) <= empty_threshold and len(legal) > 1:
+        # Backward-compatible fallback for old presets keyed by empty cells.
+        use_exact = True
+    if use_exact:
         exact_start = time.time()
-        best_move, move_values, stats = solve_root_exact(game, root_player=game.next_to_move)
-        if best_move is None:
-            return None
-        if not metadata:
-            return best_move
-        move_summaries = [
-            (move, move_values.get(move, None), 0)
-            for move in legal
-        ]
-        move_metadata = {
-            "num_gamestates": int(stats.nodes_evaluated),
-            "depth_explored": int(stats.max_depth),
-            "moves": sorted(move_summaries, key=lambda x: (-1.0 if x[1] is None else x[1], x[0][0], x[0][1]), reverse=True),
-            "thinking_time": time.time() - exact_start,
-            "early_stop": False,
-            "search_type": "exact_endgame",
-            "cache_hits": int(stats.cache_hits),
-        }
-        return [best_move[0], best_move[1], move_metadata]
+        best_move, move_values, stats = solve_root_exact(
+            game,
+            root_player=game.next_to_move,
+            draw_value=draw_value,
+            max_nodes=max_nodes,
+            max_seconds=max_seconds,
+        )
+        if best_move is not None and not stats.truncated:
+            if not metadata:
+                return best_move
+            move_summaries = [
+                (move, move_values.get(move, None), 0)
+                for move in legal
+            ]
+            move_metadata = {
+                "num_gamestates": int(stats.nodes_evaluated),
+                "depth_explored": int(stats.max_depth),
+                "moves": sorted(move_summaries, key=lambda x: (-1.0 if x[1] is None else x[1], x[0][0], x[0][1]), reverse=True),
+                "thinking_time": time.time() - exact_start,
+                "early_stop": False,
+                "search_type": "exact_endgame",
+                "cache_hits": int(stats.cache_hits),
+            }
+            return [best_move[0], best_move[1], move_metadata]
     if len(legal) == 1:
         move = legal[0]
         if not metadata:
@@ -218,8 +233,6 @@ def run_graph_puct(
     root = _ensure_node(graph, root_key, game, policy)
 
     start_time = time.time()
-    max_seconds = float(getattr(budget, "max_seconds", DEFAULT_SECONDS_LIMIT))
-    max_nodes = int(getattr(budget, "max_nodes", DEFAULT_NODE_LIMIT))
     iterations = 0
     max_depth = 0
 

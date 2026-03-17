@@ -131,6 +131,23 @@ BASELINE_PRESETS = {
     },
 }
 
+# New immutable baseline exact-endgame variants.
+BASELINE_PRESETS["default_exact_legal10_draw050_v1"] = {
+    **BASELINE_PRESETS["default"],
+    "exact_endgame_legal_cells_threshold": 10,
+    "terminal_draw_value": 0.5,
+}
+BASELINE_PRESETS["default_exact_legal14_draw050_v1"] = {
+    **BASELINE_PRESETS["default"],
+    "exact_endgame_legal_cells_threshold": 14,
+    "terminal_draw_value": 0.5,
+}
+BASELINE_PRESETS["default_exact_legal10_draw025_v1"] = {
+    **BASELINE_PRESETS["default"],
+    "exact_endgame_legal_cells_threshold": 10,
+    "terminal_draw_value": 0.25,
+}
+
 
 def get_preset(bot_id: str):
     return dict(BASELINE_PRESETS.get(bot_id, BASELINE_PRESETS[DEFAULT_BOT_ID]))

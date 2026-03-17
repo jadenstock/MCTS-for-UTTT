@@ -6,6 +6,8 @@ class BaselineMCTSPolicy:
         self.config = dict(config)
         self.ucb_constant = float(self.config.get("ucb_constant", 1.414))
         self.rollout_depth = int(self.config.get("rollout_depth", 6))
+        self.terminal_draw_value = float(self.config.get("terminal_draw_value", 0.5))
+        self.exact_endgame_legal_cells_threshold = int(self.config.get("exact_endgame_legal_cells_threshold", -1))
 
     def evaluate(self, game, player):
         return evaluate_game_state(game.board, player, self.config)
@@ -65,4 +67,3 @@ class BaselineMCTSPolicy:
                 best_key = key
                 best_move = move
         return best_move
-
