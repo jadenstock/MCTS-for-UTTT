@@ -1,7 +1,7 @@
 from core.game import Game
 from core.state_codec import game_from_current_state, serialize_game_state
 
-DEFAULT_UI_AGENT_ID = "pragmatic_v1"
+DEFAULT_UI_AGENT_ID = "graph_puct_v1"
 DEFAULT_UI_NODE_LIMIT = 750
 DEFAULT_UI_SECONDS_LIMIT = 30
 

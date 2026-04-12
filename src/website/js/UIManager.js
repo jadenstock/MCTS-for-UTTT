@@ -111,7 +111,7 @@ class UIManager {
             fill(this.oControllerSelect, true);
             fill(this.botsSelect, false);
             if (this.xControllerSelect) this.xControllerSelect.value = "player";
-            if (this.oControllerSelect) this.oControllerSelect.value = "pragmatic_v1";
+            if (this.oControllerSelect) this.oControllerSelect.value = "graph_puct_v1";
             if (this.botsSelect && data.length > 0) {
                 this.botsSelect.value = data[0].bot_id;
                 this.renderBotDetails(data[0]);
